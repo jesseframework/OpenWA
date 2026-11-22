@@ -589,20 +589,15 @@ describe('a job that can mint a publish credential pins global npm installs and 
     jobs: { publish: { ...SDK_PUBLISH_KEYS, steps: PYTHON_PUBLISH, ...flatten(PYTHON_PUBLISH) } },
   };
   // The re-point is safe only because of the order: log in, name the image, attest the tested digest, then
-  // move the tags, each checked to resolve to that digest, then verify what the public can pull. The first
-  // login names the registry (ghcr.io) with the run's own token; the second takes the Docker Hub default
-  // with a secret of its own, and a step of one never takes the other's value.
+  // move the tags, each checked to resolve to that digest, then verify what the public can pull. The single
+  // login names the registry (ghcr.io) with the run's own token. This fork publishes to GHCR only; upstream
+  // additionally mirrors to Docker Hub with a second login taking a secret of its own.
   const IMAGE_PROMOTE: StepTemplate[] = [
     { name: 'Set up Docker Buildx', uses: 'docker/setup-buildx-action' },
     {
       name: 'Login to GitHub Container Registry',
       uses: 'docker/login-action',
       with: { registry: 'ghcr.io', username: '${{ github.actor }}', password: '${{ secrets.GITHUB_TOKEN }}' },
-    },
-    {
-      name: 'Login to Docker Hub',
-      uses: 'docker/login-action',
-      with: { username: '${{ secrets.DOCKERHUB_USERNAME }}', password: '${{ secrets.DOCKERHUB_TOKEN }}' },
     },
     {
       name: 'Resolve the image name to attest',
@@ -1267,7 +1262,7 @@ describe('a job that can mint a publish credential pins global npm installs and 
       ],
       [
         'a login with another secret',
-        w => (inputsOf(uses(w, 'docker/login-action', 1)).password = '${{ secrets.NPM_TOKEN }}'),
+        w => (inputsOf(uses(w, 'docker/login-action')).password = '${{ secrets.NPM_TOKEN }}'),
         ['promote: with password: ${{ secrets.NPM_TOKEN }}'],
       ],
       [
@@ -1523,19 +1518,14 @@ describe('a job that can mint a publish credential pins global npm installs and 
     const steps = (w: OidcWorkflow): Step[] => stepsOf(w, 'promote');
     const BUILDX = 'Set up Docker Buildx';
     const GHCR = 'Login to GitHub Container Registry';
-    const HUB = 'Login to Docker Hub';
     const RESOLVE = 'Resolve the image name to attest';
     const ATTEST = 'Attest build provenance for the tested digest';
     const TAG = 'Tag the smoke-tested image with the release tags';
     const VERIFY = 'Verify the release tag resolves and is multi-arch';
-    const [buildx, ghcr, hub, resolve, attest, tag, verify] = [BUILDX, GHCR, HUB, RESOLVE, ATTEST, TAG, VERIFY].map(
-      name => place(IMAGE_PROMOTE, name),
+    const [buildx, ghcr, resolve, attest, tag, verify] = [BUILDX, GHCR, RESOLVE, ATTEST, TAG, VERIFY].map(name =>
+      place(IMAGE_PROMOTE, name),
     );
     const at = (n: number, name: string): string => `promote step ${n + 1} "${name}"`;
-    const GITHUB_TOKEN = '${{ secrets.GITHUB_TOKEN }}';
-    const HUB_TOKEN = '${{ secrets.DOCKERHUB_TOKEN }}';
-    const HUB_USER = '${{ secrets.DOCKERHUB_USERNAME }}';
-    const ACTOR = '${{ github.actor }}';
     const PROMOTING = 'echo "promoting -> $tag"';
     const CREATE = 'docker buildx imagetools create --tag "$tag" "$staging"';
     const COMPARE = 'if [ "$promoted_digest" != "$EXPECTED_DIGEST" ]; then';
@@ -1552,12 +1542,6 @@ describe('a job that can mint a publish credential pins global npm installs and 
         true,
       ],
       [
-        'the two logins in the other order',
-        exchange('promote', ghcr, hub),
-        traded('promote', [ghcr, GHCR], [hub, HUB]),
-        true,
-      ],
-      [
         'the re-point step twice',
         w => void steps(w).push({ ...steps(w)[tag] }),
         [`promote: step "${TAG}" appears 2 times, expected 1`],
@@ -1569,44 +1553,7 @@ describe('a job that can mint a publish credential pins global npm installs and 
         [`promote: step "${ATTEST}" appears 2 times, expected 1`],
         true,
       ],
-      ['the Docker Hub login removed', w => void steps(w).splice(hub, 1), [`promote: step "${HUB}" is missing`], true],
       ['the attest step removed', w => void steps(w).splice(attest, 1), [`promote: step "${ATTEST}" is missing`], true],
-      [
-        'the two login passwords swapped',
-        w => {
-          inputsOf(steps(w)[ghcr]).password = HUB_TOKEN;
-          inputsOf(steps(w)[hub]).password = GITHUB_TOKEN;
-        },
-        [
-          `${at(ghcr, GHCR)}: with password: ${HUB_TOKEN}, expected ${GITHUB_TOKEN}`,
-          `${at(hub, HUB)}: with password: ${GITHUB_TOKEN}, expected ${HUB_TOKEN}`,
-        ],
-        true,
-      ],
-      [
-        'both logins given the same password',
-        w => (inputsOf(steps(w)[hub]).password = GITHUB_TOKEN),
-        [`${at(hub, HUB)}: with password: ${GITHUB_TOKEN}, expected ${HUB_TOKEN}`],
-        true,
-      ],
-      [
-        'the Docker Hub login given the registry login name',
-        w => (inputsOf(steps(w)[hub]).username = ACTOR),
-        [`${at(hub, HUB)}: with username: ${ACTOR}, expected ${HUB_USER}`],
-        true,
-      ],
-      [
-        'the registry login given the Docker Hub name',
-        w => (inputsOf(steps(w)[ghcr]).username = HUB_USER),
-        [`${at(ghcr, GHCR)}: with username: ${HUB_USER}, expected ${ACTOR}`],
-        true,
-      ],
-      [
-        'a registry on the Docker Hub login',
-        w => (inputsOf(steps(w)[hub]).registry = 'ghcr.io'),
-        [`${at(hub, HUB)}: with registry`],
-        true,
-      ],
       [
         'the registry dropped from the first login',
         w => delete inputsOf(steps(w)[ghcr]).registry,
