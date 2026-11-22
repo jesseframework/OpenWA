@@ -505,11 +505,11 @@ jobs:
         id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6
         with:
-          # Both registries the promote job tags. Computed once here and handed to promote /
+          # The GHCR image the promote job tags. Computed once here and handed to promote /
           # verify-published via job outputs, so the promoted set cannot drift from the build.
+          # This fork publishes to GHCR only; upstream additionally mirrors to Docker Hub.
           images: |
             ghcr.io/${{ github.repository }}
-            docker.io/rmyndharis/openwa
           tags: |
             type=semver,pattern={{version}}
             # The mutable channels (X.Y, latest) are disabled for prereleases, meaning any tag with
@@ -826,10 +826,10 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
   # Applies the release tags (X.Y.Z — plus X.Y and latest for non-prereleases) to the image
-  # boot-smoke just proved can start, on BOTH registries (GHCR + Docker Hub — the tag set computed
-  # once by the docker job's metadata-action covers both. release-tags drops the channels that would
-  # move backwards and hands the rest here via job outputs, so the promoted set is by construction
-  # a subset of the build's own tag set, never a re-derived pattern).
+  # boot-smoke just proved can start, on GHCR (the tag set computed once by the docker job's
+  # metadata-action. release-tags drops the channels that would move backwards and hands the rest
+  # here via job outputs, so the promoted set is by construction a subset of the build's own tag
+  # set, never a re-derived pattern).
   # `imagetools create` re-points tags at the existing manifest list without rebuilding, so the
   # promoted image is bit-identical to the one tested on both registries, and its provenance and
   # SBOM attestations travel with it. Before re-pointing anything, the job records a signed
@@ -857,15 +857,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Dual-publish: the same boot-tested manifest is also tagged on Docker Hub, where the public
-      # pull count lives (GHCR exposes no download metrics). Requires the DOCKERHUB_USERNAME /
-      # DOCKERHUB_TOKEN repo secrets; without them this step fails before any tag is applied.
-      - name: Login to Docker Hub
-        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
+      # This fork publishes to GHCR only (logged in above). Upstream additionally re-tags the same
+      # boot-tested manifest on Docker Hub for its public pull count; that requires DOCKERHUB_USERNAME
+      # / DOCKERHUB_TOKEN secrets this fork does not set, and the build's tag set is GHCR-only, so
+      # there is nothing to log in to here.
       - name: Resolve the image name to attest
         id: image
         env:
@@ -873,7 +868,7 @@ jobs:
         run: echo "name=ghcr.io/${REPO,,}" >> "$GITHUB_OUTPUT"
 
       # Before any release tag moves, so a failed attestation publishes nothing. Keyed by digest in
-      # GitHub's attestation store, so it covers every tag promoted below on both registries, each of
+      # GitHub's attestation store, so it covers every GHCR tag promoted below, each of
       # which must resolve to this digest. Not pushed to the registry, which would add an untagged
       # package version per release.
       - name: Attest build provenance for the tested digest
@@ -1008,7 +1003,7 @@ jobs:
   # This job fixes both blind spots. It runs after promote (so it sees the final state, cleanup
   # included) and it never logs in, so it fails on a tag that exists but is not publicly readable —
   # which is indistinguishable from a missing tag to everyone downstream. The checked set is the
-  # release-tags selection (both registries), so it matches what promote was told to move: for a
+  # release-tags selection (GHCR), so it matches what promote was told to move: for a
   # prerelease that is only the exact X.Y.Z-pre tag, and a channel that already served a newer
   # release is not expected to have moved. Every tag must also resolve to the build's digest, so a
   # re-pointed channel can never silently serve content other than the tested image.
