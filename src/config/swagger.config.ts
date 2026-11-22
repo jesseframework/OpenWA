@@ -269,6 +269,7 @@ export function createSwaggerConfig(): Omit<OpenAPIObject, 'paths'> {
       .addTag('infrastructure', 'Infrastructure & datastore management')
       .addTag('integration', 'Integration Fabric (provider webhooks & instances)')
       .addTag('auth', 'API key management')
+      .addTag('tenants', 'Tenant management (multi-tenant isolation)')
       .addTag('audit', 'Audit log')
       .addTag('metrics', 'Prometheus metrics')
       .addTag('health', 'Health check endpoints')

@@ -9,6 +9,12 @@ export enum AuditAction {
   API_KEY_DELETED = 'api_key_deleted',
   API_KEY_AUTH_FAILED = 'api_key_auth_failed',
 
+  // Tenant lifecycle (multi-tenant isolation): a tenant groups the sessions a tenant-scoped key may
+  // reach, so creating/renaming/removing one is a security-relevant admin action, audited like keys.
+  TENANT_CREATED = 'tenant_created',
+  TENANT_UPDATED = 'tenant_updated',
+  TENANT_DELETED = 'tenant_deleted',
+
   // Rate-limit enforcement (sampled: at most one row per subject+kind per minute — see
   // EventsGateway — so enforcing a limit never becomes an audit-write flood of its own).
   RATE_LIMIT_EXCEEDED = 'rate_limit_exceeded',

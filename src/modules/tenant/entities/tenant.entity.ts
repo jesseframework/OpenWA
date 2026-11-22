@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 
 /**
  * A tenant groups WhatsApp sessions for isolation. An API key carrying this tenant's id is
@@ -17,8 +17,14 @@ export class Tenant {
   /**
    * External identity this tenant maps to — the WorkHub workspace id for "Sign in with WorkHub", so
    * a workspace resolves to the same tenant on every login. NULL for a tenant created directly in
-   * OpenWA. Unique when set (enforced by the partial unique index in the CreateTenants migration).
+   * OpenWA. Unique when set.
+   *
+   * The partial UNIQUE index is declared here with the SAME name the CreateTenants migration uses, so
+   * a MAIN_DATABASE_SYNCHRONIZE=true boot (dev/e2e) keeps it rather than dropping a migration-only
+   * index and silently losing the uniqueness guarantee; migration-managed boots create it from the
+   * migration. Matching names mean neither path makes a duplicate.
    */
+  @Index('IDX_tenants_externalId', { unique: true, where: '"externalId" IS NOT NULL' })
   @Column({ type: 'varchar', length: 190, nullable: true })
   externalId!: string | null;
 

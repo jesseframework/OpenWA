@@ -47,9 +47,11 @@ export class ApiKey {
   // auto-scoped FAIL-CLOSED to only the sessions of that tenant (see validateApiKey + the session
   // list/stats queries + create-stamp), independently of allowedSessions — which stays fail-open and
   // may narrow further WITHIN the tenant. A NULL tenantId is the pre-tenancy global key: it sees
-  // every session and is the only kind that manages tenants and other keys. Indexed in the
-  // AddApiKeyTenantId migration (column indexes live in migrations here, not entity decorators).
+  // every session and is the only kind that manages tenants and other keys. Indexed with the SAME
+  // name the AddApiKeyTenantId migration uses, so the migration (prod) and a MAIN_DATABASE_SYNCHRONIZE
+  // boot (dev/e2e) agree and neither leaves the other's index as drift.
   // Optional at the type level (null in the DB when unset) so enforcement branches on truthiness.
+  @Index('IDX_api_keys_tenantId')
   @Column({ type: 'varchar', length: 36, nullable: true })
   tenantId?: string | null;
 

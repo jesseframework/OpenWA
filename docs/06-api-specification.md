@@ -5471,6 +5471,129 @@ The key is read from the `X-API-Key` header, not the body; send an empty body. T
 
 > Implemented by `AuthValidateController` (`@Controller('auth')`), sharing the same `/api/auth` base.
 
+### 6.4.9a Tenants (multi-tenant isolation)
+
+A **tenant** groups WhatsApp sessions so a tenant-scoped API key sees and manages only that tenant's sessions. A key carries a tenant through its optional `tenantId` (see [`POST /api/auth/api-keys`](#post-apiauthapi-keys)): the server resolves the key's effective `allowedSessions` to the tenant's sessions at authentication time, **fail-closed** — a tenant that owns no session confines its keys to nothing rather than to everything. A session is stamped with the creating key's tenant on `POST /api/sessions`.
+
+Tenant management lives under `/api/tenants` and, like the API-key routes, requires an **ADMIN** key **with no scope**: the controller is fenced with `@RequireUnscopedKey`, so a session-scoped or tenant-bound key is rejected with `403` — a tenant key resolves to a non-empty `allowedSessions`, so it can never manage tenants. The `externalId` maps a tenant to an external identity (e.g. a WorkHub workspace) and is unique across tenants when set.
+
+#### POST /api/tenants
+
+Create a tenant.
+
+**Auth:** API key (ADMIN, unscoped)
+
+**Request body** — `CreateTenantDto`
+
+| Field        | Type   | Required | Constraints                                   | Description                                                                                  |
+| ------------ | ------ | -------- | --------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `name`       | string | yes      | length 1–100                                  | Human-readable tenant name.                                                                  |
+| `externalId` | string | no       | length ≤ 190; unique across tenants when set  | External identity (e.g. WorkHub workspace id). Omit for a tenant managed only inside OpenWA. |
+
+```json
+{ "name": "Acme Corp", "externalId": "wh_ws_4f1c2d" }
+```
+
+**Response** `201` — `TenantResponseDto`
+
+A blank or omitted `externalId` is stored as `null` (unmapped). `isActive` starts `true`.
+
+```json
+{
+  "id": "b3f1c2d4-5e6a-4b7c-8d9e-0f1a2b3c4d5e",
+  "name": "Acme Corp",
+  "externalId": "wh_ws_4f1c2d",
+  "isActive": true,
+  "createdAt": "2026-11-22T09:30:00.000Z",
+  "updatedAt": "2026-11-22T09:30:00.000Z"
+}
+```
+
+**Errors:** `400` validation (bad `name` length, over-long `externalId`, or any non-whitelisted body field) · `401` missing/invalid key · `403` key role below ADMIN, or the key is session-scoped / tenant-bound / restricted with `allowedChats` · `409` a tenant with that `externalId` already exists
+
+#### GET /api/tenants
+
+List all tenants, newest first.
+
+**Auth:** API key (ADMIN, unscoped)
+
+**Response** `200`
+
+Bare JSON array (no envelope), ordered by `createdAt` DESC.
+
+```json
+[
+  {
+    "id": "b3f1c2d4-5e6a-4b7c-8d9e-0f1a2b3c4d5e",
+    "name": "Acme Corp",
+    "externalId": "wh_ws_4f1c2d",
+    "isActive": true,
+    "createdAt": "2026-11-22T09:30:00.000Z",
+    "updatedAt": "2026-11-22T09:30:00.000Z"
+  }
+]
+```
+
+**Errors:** `401` missing/invalid key · `403` key role below ADMIN, or the key is session-scoped / tenant-bound / restricted with `allowedChats`
+
+#### GET /api/tenants/:id
+
+Get one tenant by id.
+
+**Auth:** API key (ADMIN, unscoped)
+
+**Path parameters**
+
+| Name | Type          | Description |
+| ---- | ------------- | ----------- |
+| `id` | string (uuid) | Tenant id.  |
+
+**Response** `200` — `TenantResponseDto`
+
+**Errors:** `401` missing/invalid key · `403` key role below ADMIN, or the key is session-scoped / tenant-bound / restricted with `allowedChats` · `404` `"Tenant with id '<id>' not found"`
+
+#### PUT /api/tenants/:id
+
+Update a tenant's `name`, `externalId`, or `isActive`.
+
+**Auth:** API key (ADMIN, unscoped)
+
+**Path parameters**
+
+| Name | Type          | Description |
+| ---- | ------------- | ----------- |
+| `id` | string (uuid) | Tenant id.  |
+
+**Request body** — `UpdateTenantDto`
+
+| Field        | Type           | Required | Constraints                   | Description                                                                             |
+| ------------ | -------------- | -------- | ----------------------------- | --------------------------------------------------------------------------------------- |
+| `name`       | string         | no       | length 1–100                  | Applied if provided.                                                                    |
+| `externalId` | string \| null | no       | length ≤ 190; unique when set | Applied if not `undefined`; `null` (or a blank string) clears the mapping.              |
+| `isActive`   | boolean        | no       |                               | Deactivate/reactivate. Advisory metadata — it does not by itself change session visibility. |
+
+**Response** `200` — `TenantResponseDto`
+
+**Errors:** `400` validation · `401` missing/invalid key · `403` key role below ADMIN, or the key is session-scoped / tenant-bound / restricted with `allowedChats` · `404` `"Tenant with id '<id>' not found"` · `409` a tenant with that `externalId` already exists
+
+#### DELETE /api/tenants/:id
+
+Permanently delete a tenant. Refused while any API key or session still references it — retarget or remove those first, or deactivate the tenant instead (`PUT isActive:false`).
+
+**Auth:** API key (ADMIN, unscoped)
+
+**Path parameters**
+
+| Name | Type          | Description |
+| ---- | ------------- | ----------- |
+| `id` | string (uuid) | Tenant id.  |
+
+**Response** `204`
+
+`@HttpCode(204)` — no response body.
+
+**Errors:** `401` missing/invalid key · `403` key role below ADMIN, or the key is session-scoped / tenant-bound / restricted with `allowedChats` · `404` `"Tenant with id '<id>' not found"` · `409` the tenant still has API keys or sessions referencing it
+
 ### 6.4.10 System (Health, Metrics, Stats, Settings, Audit)
 
 System endpoints expose operational status, Prometheus metrics, aggregate statistics, runtime settings, and the audit log. Health and metrics use non-standard auth (public / Bearer token); stats, settings and audit use the API key, with several routes gated to `ADMIN`.

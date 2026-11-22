@@ -48,6 +48,10 @@ export function mainConnectionOptions(
     entities: [
       join(__dirname, '..', 'modules/auth/**/*.entity{.ts,.js}'),
       join(__dirname, '..', 'modules/audit/**/*.entity{.ts,.js}'),
+      // Tenant lives on the main (auth) connection alongside api_keys; CreateTenants runs in
+      // migrations-main. The boot schema check iterates these entities, so the glob and the chain
+      // must agree — both cover tenants.
+      join(__dirname, '..', 'modules/tenant/**/*.entity{.ts,.js}'),
     ],
     // Dedicated migrations dir for the main connection only (must NOT run the data-connection
     // migrations, which target session/webhook/message tables).
