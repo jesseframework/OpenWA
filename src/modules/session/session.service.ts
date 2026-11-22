@@ -502,7 +502,7 @@ export class SessionService implements OnModuleDestroy, OnModuleInit, OnApplicat
     }
   }
 
-  async create(dto: CreateSessionDto): Promise<Session> {
+  async create(dto: CreateSessionDto, tenantId?: string | null): Promise<Session> {
     // Check if session with same name exists
     const existing = await this.sessionRepository.findOne({
       where: { name: dto.name },
@@ -518,6 +518,9 @@ export class SessionService implements OnModuleDestroy, OnModuleInit, OnApplicat
       proxyUrl: dto.proxyUrl || null,
       proxyType: dto.proxyType || null,
       status: SessionStatus.CREATED,
+      // Stamp the creating key's tenant so the session belongs to it (visible only to that tenant's
+      // keys + global keys). Null for a global (no-tenant) key; session names stay globally unique.
+      tenantId: tenantId ?? null,
     });
 
     // The findOne pre-check above is a fast path for the common case, but it's a check-then-insert

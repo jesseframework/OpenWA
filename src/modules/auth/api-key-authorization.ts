@@ -33,7 +33,7 @@ export function apiKeyExpiryTime(value: Date | string | null | undefined): numbe
 /** The columns that decide what a key may do. Everything else on the row is descriptive or advisory. */
 export type ApiKeyAuthorization = Pick<
   ApiKey,
-  'role' | 'allowedIps' | 'allowedSessions' | 'allowedChats' | 'expiresAt'
+  'role' | 'allowedIps' | 'allowedSessions' | 'allowedChats' | 'expiresAt' | 'tenantId'
 >;
 
 /**
@@ -47,6 +47,14 @@ export type ApiKeyAuthorization = Pick<
  * Membership, not order: both allowlists are enforced with `.includes()`, so a reorder authorizes
  * exactly the same and is sorted away here. `''`, `[]` and NULL all mean "unscoped" at every
  * enforcement site and normalize to the same value, so a legacy row does not read as a change.
+ *
+ * `tenantId` joins the fingerprint because confining a key to a tenant (or detaching it) changes what
+ * it may reach without touching any other column, so a tenant reassignment must evict the key's live
+ * sockets like any other scope change. It reads from the RAW stored column here (truthiness, matching
+ * the `!apiKey.tenantId` test in TenantScopeService), so `''` and NULL both mean "no tenant". The
+ * derived session set a tenant key resolves to is already reflected through `allowedSessions`, which
+ * validateApiKey and findAuthorizationStates overwrite with the same resolved list on both sides of
+ * every comparison — so this entry captures the tenant identity and that entry captures its membership.
  */
 export function apiKeyAuthorizationFingerprint(key: ApiKeyAuthorization): string {
   const scope = (list: string[] | null | undefined): string[] | null => {
@@ -59,5 +67,6 @@ export function apiKeyAuthorizationFingerprint(key: ApiKeyAuthorization): string
     scope(key.allowedSessions),
     scope(normalizeChatAllowList(key.allowedChats)),
     apiKeyExpiryTime(key.expiresAt),
+    key.tenantId || null,
   ]);
 }

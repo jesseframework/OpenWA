@@ -33,8 +33,9 @@ export class Session {
   /**
    * Tenant that owns this session, or NULL for an unassigned/global session. A tenant-scoped API key
    * (one carrying a tenantId) may only see and act on sessions whose tenantId equals its own —
-   * enforced FAIL-CLOSED in validateApiKey (per-session routes), the session list/stats queries, and
-   * stamped here on create from the creating key's tenantId. NULL predates tenancy and is visible
+   * enforced FAIL-CLOSED at auth time by the key validator on per-session routes, by the session
+   * list/stats queries, and stamped here on create from the creating key's tenantId. NULL predates
+   * tenancy and is visible
    * only to a global (no-tenant) key. Indexed in the migration for the scoped-list WHERE filter.
    * Optional at the type level (null in the DB when unset) so enforcement branches on truthiness.
    */
