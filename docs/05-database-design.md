@@ -897,7 +897,7 @@ OpenWA runs **two separate TypeORM connections**, each with its own migrations d
 
 | Connection | DataSource            | Migrations dir                  | Owns                                                                                                                                                                                                                                                                                                                                                      |
 | ---------- | --------------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **main**   | `data-source-main.ts` | `src/database/migrations-main/` | `api_keys`, `audit_logs`, always SQLite (`./data/main.sqlite` by default)                                                                                                                                                                                                                                                                                 |
+| **main**   | `data-source-main.ts` | `src/database/migrations-main/` | `api_keys`, `audit_logs`, `tenants`, always SQLite (`./data/main.sqlite` by default)                                                                                                                                                                                                                                                                                 |
 | **data**   | `data-source.ts`      | `src/database/migrations/`      | `sessions`, `webhooks`, `messages`, `message_batches`, `templates`, `status_updates`, `automation_rules`, `webhook_delivery_failures`, `webhook_outbox_events`, `send_idempotency_keys`, the integration tables (`plugin_instances`, `ingress_events`, `conversation_mappings`, `integration_delivery_failures`), engine tables, SQLite **or** PostgreSQL |
 
 Migrations are hand-authored and idempotent (`IF NOT EXISTS`) so they are safe to adopt on a database originally created by `synchronize`. The two connections differ in how schema is managed:
@@ -914,7 +914,9 @@ Migrations are hand-authored and idempotent (`IF NOT EXISTS`) so they are safe t
 src/database/migrations-main/      # main connection (auth + audit, SQLite)
 ├── 1779900000000-CreateAuthAuditTables.ts   # creates api_keys + audit_logs
 ├── 1786600000000-AddApiKeyAllowedChats.ts   # adds api_keys.allowedChats
-└── 1786610000000-DropSynchronizeIndexDuplicates.ts  # drops synchronize-named duplicate indexes
+├── 1786610000000-DropSynchronizeIndexDuplicates.ts  # drops synchronize-named duplicate indexes
+├── 1792000000000-CreateTenants.ts   # creates tenants (multi-tenant isolation)
+└── 1792000100000-AddApiKeyTenantId.ts   # adds api_keys.tenantId (confines a key to one tenant's sessions)
 
 src/database/migrations/           # data connection (pluggable)
 ├── 1770108659848-AddMessageStatus.ts
@@ -966,7 +968,8 @@ src/database/migrations/           # data connection (pluggable)
 ├── 1791400000000-AddLidMappingReportSource.ts   # distinguishes mapping reports from cached display data
 ├── 1791600000000-RepairSqliteMessageFts.ts   # rebuilds the SQLite full-text index when it no longer matches messages
 ├── 1791700000000-AddChatStateDeletedAt.ts   # chat_states.deletedAt (when WhatsApp deleted the chat)
-└── 1791800000000-AddStatusMediaPathIndex.ts   # partial index on status_updates.mediaPath (orphan sweep)
+├── 1791800000000-AddStatusMediaPathIndex.ts   # partial index on status_updates.mediaPath (orphan sweep)
+└── 1792000200000-AddSessionTenantId.ts   # adds sessions.tenantId (tenant that owns the session; indexed for scoped lists)
 ```
 
 > [!NOTE]

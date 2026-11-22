@@ -122,7 +122,9 @@ export class SessionController {
     if (dto.proxyUrl && apiKey?.role !== ApiKeyRole.ADMIN) {
       throw new ForbiddenException('Setting proxyUrl requires an ADMIN key');
     }
-    const session = await this.sessionService.create(dto);
+    // Stamp the new session with the creating key's tenant so it belongs to that tenant (a tenant key
+    // creates sessions inside its own tenant; a global key creates unassigned/global ones).
+    const session = await this.sessionService.create(dto, apiKey?.tenantId);
     await this.auditService.logInfo(AuditAction.SESSION_CREATED, {
       sessionId: session.id,
       sessionName: session.name,

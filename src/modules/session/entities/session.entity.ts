@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 import { DateTransformer } from '../../../common/transformers/date.transformer';
 import { NulFreeTransformer } from '../../../common/transformers/nul-free.transformer';
 import { jsonColumnType, dateColumnType } from '../../../common/utils/column-types';
@@ -29,6 +29,21 @@ export class Session {
     default: SessionStatus.CREATED,
   })
   status!: SessionStatus;
+
+  /**
+   * Tenant that owns this session, or NULL for an unassigned/global session. A tenant-scoped API key
+   * (one carrying a tenantId) may only see and act on sessions whose tenantId equals its own —
+   * enforced FAIL-CLOSED at auth time by the key validator on per-session routes, by the session
+   * list/stats queries, and stamped here on create from the creating key's tenantId. NULL predates
+   * tenancy and is visible
+   * only to a global (no-tenant) key. Indexed (for the scoped-list WHERE filter) with the SAME name
+   * the AddSessionTenantId migration uses, so the migration (prod) and a DATABASE_SYNCHRONIZE boot
+   * (dev/e2e) agree and neither leaves the other's index as drift.
+   * Optional at the type level (null in the DB when unset) so enforcement branches on truthiness.
+   */
+  @Index('IDX_sessions_tenantId')
+  @Column({ type: 'varchar', length: 36, nullable: true })
+  tenantId?: string | null;
 
   @Column({ type: 'varchar', length: 20, nullable: true })
   phone!: string | null;

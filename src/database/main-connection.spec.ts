@@ -88,7 +88,8 @@ describe('main connection', () => {
   };
 
   const expectOneIndexPerColumn = async (ds: DataSource): Promise<void> => {
-    expect(await indexedColumns(ds, 'api_keys')).toEqual(['keyHash']);
+    // tenantId is indexed by the AddApiKeyTenantId migration — it backs the tenant-scoped key lookups.
+    expect(await indexedColumns(ds, 'api_keys')).toEqual(['keyHash', 'tenantId']);
     expect(await indexedColumns(ds, 'audit_logs')).toEqual(['action', 'apiKeyId', 'createdAt', 'sessionId']);
   };
 

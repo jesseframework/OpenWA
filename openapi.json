@@ -63,6 +63,9 @@
                 "api_key_revoked",
                 "api_key_deleted",
                 "api_key_auth_failed",
+                "tenant_created",
+                "tenant_updated",
+                "tenant_deleted",
                 "rate_limit_exceeded",
                 "queue_board_mutated",
                 "session_created",
@@ -596,6 +599,333 @@
         "summary": "Validate an API key",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/api/tenants": {
+      "post": {
+        "operationId": "TenantController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTenantDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tenant created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TenantResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body is malformed, fails validation, or carries a field the DTO does not declare",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The API key is missing, unknown, revoked, or expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The API key's role, session or chat scope, or IP allow-list does not allow this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A tenant with that externalId already exists.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a tenant (global admin only)",
+        "tags": [
+          "tenants"
+        ]
+      },
+      "get": {
+        "operationId": "TenantController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Tenants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TenantResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The API key is missing, unknown, revoked, or expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The API key's role, session or chat scope, or IP allow-list does not allow this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List all tenants (global admin only)",
+        "tags": [
+          "tenants"
+        ]
+      }
+    },
+    "/api/tenants/{id}": {
+      "get": {
+        "operationId": "TenantController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tenant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TenantResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The API key is missing, unknown, revoked, or expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The API key's role, session or chat scope, or IP allow-list does not allow this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tenant not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get one tenant (global admin only)",
+        "tags": [
+          "tenants"
+        ]
+      },
+      "put": {
+        "operationId": "TenantController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTenantDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tenant updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TenantResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body is malformed, fails validation, or carries a field the DTO does not declare",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The API key is missing, unknown, revoked, or expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The API key's role, session or chat scope, or IP allow-list does not allow this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tenant not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A tenant with that externalId already exists.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update a tenant (global admin only)",
+        "tags": [
+          "tenants"
+        ]
+      },
+      "delete": {
+        "operationId": "TenantController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Tenant deleted"
+          },
+          "401": {
+            "description": "The API key is missing, unknown, revoked, or expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The API key's role, session or chat scope, or IP allow-list does not allow this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tenant not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Tenant still has API keys or sessions; retarget/remove them or deactivate instead.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Delete a tenant (global admin only); refused while keys/sessions reference it",
+        "tags": [
+          "tenants"
         ]
       }
     },
@@ -18850,6 +19180,10 @@
       "description": "API key management"
     },
     {
+      "name": "tenants",
+      "description": "Tenant management (multi-tenant isolation)"
+    },
+    {
       "name": "audit",
       "description": "Audit log"
     },
@@ -19079,6 +19413,11 @@
             "type": "string",
             "description": "Expiration date (ISO 8601)",
             "example": "2027-12-31T23:59:59Z"
+          },
+          "tenantId": {
+            "type": "string",
+            "description": "Tenant this key belongs to — the tenant **id**. A key with a tenantId is confined to that tenant's sessions no matter what `allowedSessions` says: the two intersect, so a tenant key can be narrowed WITHIN its tenant but never widened past it, and a tenant that owns no session sees none (fail-closed). Omit for a global key. Settable only through a key that itself reaches key management (an unscoped admin), since a tenant-scoped key is fenced out of these routes.",
+            "example": "b3f1c2d4-5e6a-4b7c-8d9e-0f1a2b3c4d5e"
           }
         },
         "required": [
@@ -19266,6 +19605,11 @@
             "type": "string",
             "nullable": true,
             "description": "Expiration date (ISO 8601); null clears it (an empty string is rejected)"
+          },
+          "tenantId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Reassign the key's tenant, or null to detach it and make it global again. A string confines the key to that tenant's sessions (fail-closed); omit to leave the tenant unchanged. Settable only through an unscoped admin key, which a tenant-scoped key is not."
           }
         }
       },
@@ -19300,6 +19644,80 @@
         "required": [
           "valid"
         ]
+      },
+      "CreateTenantDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Human-readable tenant name.",
+            "example": "Acme Corp",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "externalId": {
+            "type": "string",
+            "description": "External identity this tenant maps to — e.g. the WorkHub workspace id for \"Sign in with WorkHub\", so the workspace resolves to the same tenant on every login. Unique across tenants when set; omit for a tenant managed only inside OpenWA.",
+            "example": "wh_ws_4f1c2d",
+            "maxLength": 190
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "TenantResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "externalId": {
+            "type": "string",
+            "nullable": true
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "isActive",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "UpdateTenantDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "externalId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Reassign the external id, or null to clear it. Unique across tenants when set.",
+            "maxLength": 190
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Deactivate (false) or reactivate (true) the tenant. Deactivation is advisory metadata — it does not by itself change session visibility; a key stays bound to the tenant until retargeted."
+          }
+        }
       },
       "CreateSessionDto": {
         "type": "object",

@@ -26,6 +26,7 @@ import { apiKeyAuthorizationFingerprint, normalizeScopeList } from './api-key-au
 import { normalizeChatAllowList } from '../../common/security/chat-scope';
 import { EventsGateway, type ApiKeyEvictionReason } from '../events/events.gateway';
 import { isSwaggerEnabled } from '../../config/bootstrap-security';
+import { TenantScopeService } from '../tenant/tenant-scope.service';
 
 /**
  * A 401 that names no stored key: the credential was missing or matched no row. Producing one costs
@@ -121,6 +122,10 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
     private readonly usageTracker: ApiKeyUsageTracker,
     private readonly moduleRef: ModuleRef,
     @Optional() private readonly keyIndex?: ActiveKeyIndex,
+    // Confines a tenant key to its tenant's sessions (see validateApiKey). @Optional like keyIndex:
+    // the running app always provides it; direct-construction unit tests that predate tenancy omit it
+    // and simply skip tenant resolution (their keys carry no tenantId, so it would be a no-op anyway).
+    @Optional() private readonly tenantScope?: TenantScopeService,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -279,6 +284,8 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
       allowedSessions: normalizeScopeList(dto.allowedSessions),
       allowedChats: normalizeChatAllowList(dto.allowedChats),
       expiresAt: dto.expiresAt ? AuthService.parseExpiry(dto.expiresAt) : null,
+      // '' / whitespace → NULL (global), matching the `!apiKey.tenantId` truthiness the resolver uses.
+      tenantId: dto.tenantId?.trim() || null,
     });
 
     const saved = await this.apiKeyRepository.save(apiKey);
@@ -309,13 +316,20 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
   async update(id: string, dto: UpdateApiKeyDto): Promise<ApiKey> {
     const apiKey = await this.findOne(id);
 
-    // Scoping the last unscoped admin (non-empty allowedSessions) strips key-management just as
-    // surely as demoting or expiring it: @RequireUnscopedKey would then 403 every lifecycle route.
-    // A role that is null (or empty) is read as no role by the patch below, so it demotes nothing.
+    // Confining the key to a tenant fences it out of key management exactly as scoping it does: a
+    // tenant key resolves to a non-empty allowedSessions, so @RequireUnscopedKey 403s every lifecycle
+    // route. Only a NON-EMPTY assignment strips — detaching a tenant (null/'') un-fences, like clearing
+    // a scope. The `trim()` matches the create-stamp and the resolver's truthiness.
+    const assignsTenant = typeof dto.tenantId === 'string' && dto.tenantId.trim().length > 0;
+    // Scoping the last unscoped admin (non-empty allowedSessions), or confining it to a tenant, strips
+    // key-management just as surely as demoting or expiring it: @RequireUnscopedKey would then 403 every
+    // lifecycle route. A role that is null (or empty) is read as no role by the patch below, so it
+    // demotes nothing.
     const stripsAdmin =
       (!!dto.role && dto.role !== ApiKeyRole.ADMIN) ||
       (normalizeScopeList(dto.allowedSessions)?.length ?? 0) > 0 ||
-      (normalizeChatAllowList(dto.allowedChats)?.length ?? 0) > 0;
+      (normalizeChatAllowList(dto.allowedChats)?.length ?? 0) > 0 ||
+      assignsTenant;
     const expiry = dto.expiresAt ? AuthService.parseExpiry(dto.expiresAt) : null;
     const setsExpiry = expiry !== null;
     const removesOrSchedulesLastAdmin = stripsAdmin || setsExpiry;
@@ -331,6 +345,7 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
       allowedSessions: apiKey.allowedSessions,
       allowedChats: apiKey.allowedChats,
       expiresAt: apiKey.expiresAt,
+      tenantId: apiKey.tenantId,
     };
 
     const patch: QueryDeepPartialEntity<ApiKey> = {};
@@ -340,6 +355,8 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
     if (dto.allowedSessions !== undefined) patch.allowedSessions = normalizeScopeList(dto.allowedSessions);
     if (dto.allowedChats !== undefined) patch.allowedChats = normalizeChatAllowList(dto.allowedChats);
     if (dto.expiresAt !== undefined) patch.expiresAt = expiry;
+    // null/'' detaches the tenant (global again); a string confines the key to it. Undefined leaves it.
+    if (dto.tenantId !== undefined) patch.tenantId = dto.tenantId?.trim() || null;
 
     let saved: ApiKey;
     if (removesOrSchedulesLastAdmin) {
@@ -441,7 +458,13 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
       `${col('role')} = :adminRole AND ${col('isActive')} = 1 AND ` +
       `(${col('expiresAt')} IS NULL OR ${col('expiresAt')} > :guardNow) AND ` +
       `(${col('allowedSessions')} = '' OR ${col('allowedSessions')} IS NULL) AND ` +
-      `(${col('allowedChats')} = '' OR ${col('allowedChats')} IS NULL)`
+      `(${col('allowedChats')} = '' OR ${col('allowedChats')} IS NULL) AND ` +
+      // A tenant-confined admin resolves to a non-empty allowedSessions at auth time, so
+      // @RequireUnscopedKey fences it out of every key-lifecycle route: it can authenticate but can
+      // never manage keys, so it must NOT count toward the last-usable-admin invariant (mirrors the
+      // allowedSessions clause above). '' and NULL both mean "no tenant", matching the create/update
+      // stamp and the resolver's truthiness.
+      `(${col('tenantId')} = '' OR ${col('tenantId')} IS NULL)`
     );
   }
 
@@ -557,7 +580,30 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
    */
   async findAuthorizationStates(ids: string[]): Promise<ApiKey[]> {
     if (ids.length === 0) return [];
-    return this.apiKeyRepository.findBy({ id: In(ids) });
+    const keys = await this.apiKeyRepository.findBy({ id: In(ids) });
+    // Resolve tenant membership into allowedSessions on each key the SAME way validateApiKey does, so
+    // the authorization fingerprint the gateway's periodic sweep computes from these rows matches the
+    // one each live socket carries — a socket's snapshot IS a validateApiKey result (resolved). Without
+    // this, a tenant key's stored allowedSessions (NULL) would never equal its socket's resolved list,
+    // and every tenant-keyed socket would read as "authorization changed" and be evicted every tick.
+    await Promise.all(keys.map(key => this.applyTenantScope(key)));
+    return keys;
+  }
+
+  /**
+   * Overwrite `apiKey.allowedSessions` IN PLACE with the effective session allowlist the key's tenant
+   * membership resolves to (see TenantScopeService): a tenant key is confined fail-closed to its
+   * tenant's sessions, a global (no-tenant) key is left untouched. Every downstream reader of
+   * `allowedSessions` — the validateApiKey session fence, SessionService.findAll/getStats,
+   * resolveSessionScope, the @RequireUnscopedKey guard — then enforces tenant isolation with no new
+   * per-site check. The caller MUST pass a fresh, unshared key object (a per-request DB load), since
+   * this mutates it. A no-op when the tenant module is absent (unit tests construct AuthService without
+   * it; tenantScope is @Optional), which keeps pre-tenancy behavior exactly.
+   */
+  private async applyTenantScope(apiKey: ApiKey): Promise<void> {
+    if (this.tenantScope) {
+      apiKey.allowedSessions = await this.tenantScope.effectiveAllowedSessions(apiKey);
+    }
   }
 
   async validateApiKey(
@@ -610,6 +656,14 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
         throw new ForbiddenException('IP address not allowed');
       }
     }
+
+    // Tenant isolation. Collapse this key's tenant membership into the effective `allowedSessions`
+    // that the session fence below — and every downstream scope check that reads `apiKey.allowedSessions`
+    // (SessionService.findAll/getStats, resolveSessionScope, the guard's @RequireUnscopedKey fence) —
+    // already enforces. A tenant key becomes confined (fail-closed) to its tenant's sessions; a global
+    // (no-tenant) key is returned unchanged. The key is a fresh per-request load (above), so this
+    // overwrite never leaks across requests and the stored row is untouched.
+    await this.applyTenantScope(apiKey);
 
     // Check session restriction
     if (apiKey.allowedSessions && apiKey.allowedSessions.length > 0 && sessionId) {

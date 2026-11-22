@@ -100,6 +100,21 @@ export class CreateApiKeyDto {
   @IsOptional()
   @IsDateString()
   expiresAt?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Tenant this key belongs to — the tenant **id**. A key with a tenantId is confined to that ' +
+      "tenant's sessions no matter what `allowedSessions` says: the two intersect, so a tenant key " +
+      'can be narrowed WITHIN its tenant but never widened past it, and a tenant that owns no session ' +
+      'sees none (fail-closed). Omit for a global key. Settable only through a key that itself reaches ' +
+      'key management (an unscoped admin), since a tenant-scoped key is fenced out of these routes.',
+    example: 'b3f1c2d4-5e6a-4b7c-8d9e-0f1a2b3c4d5e',
+  })
+  @IsOptional()
+  @ToStrictString()
+  @IsString()
+  @MaxCodePoints(36)
+  tenantId?: string;
 }
 
 export class ApiKeyResponseDto {
@@ -221,4 +236,18 @@ export class UpdateApiKeyDto {
   @IsOptional()
   @IsDateString()
   expiresAt?: string | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    description:
+      "Reassign the key's tenant, or null to detach it and make it global again. A string confines the " +
+      "key to that tenant's sessions (fail-closed); omit to leave the tenant unchanged. Settable only " +
+      'through an unscoped admin key, which a tenant-scoped key is not.',
+  })
+  @IsOptional()
+  @ToStrictString()
+  @IsString()
+  @MaxCodePoints(36)
+  tenantId?: string | null;
 }

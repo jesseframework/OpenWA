@@ -39,8 +39,10 @@ const DATA_ENTITY_ROOTS = [
   'modules/status-store',
   'modules/automation',
 ];
-// The main-connection (auth/audit) roots; their tables are not this endpoint's payload.
-const MAIN_ENTITY_ROOTS = ['modules/auth', 'modules/audit'];
+// The main-connection (auth/audit/tenant) roots; their tables are not this endpoint's payload.
+// `tenants` lives on the main connection (migrations-main/, registered on the 'main' DataSource), so
+// like api_keys and audit_logs it is backed up with the main DB, not through this data-export gateway.
+const MAIN_ENTITY_ROOTS = ['modules/auth', 'modules/audit', 'modules/tenant'];
 
 type Connection = 'data' | 'main' | 'unclassified';
 
