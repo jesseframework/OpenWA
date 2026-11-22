@@ -43,6 +43,16 @@ export class ApiKey {
   @Column({ type: 'simple-array', nullable: true })
   allowedChats!: string[] | null;
 
+  // Tenant this key belongs to, or NULL for a global/platform key. A key with a tenantId is
+  // auto-scoped FAIL-CLOSED to only the sessions of that tenant (see validateApiKey + the session
+  // list/stats queries + create-stamp), independently of allowedSessions — which stays fail-open and
+  // may narrow further WITHIN the tenant. A NULL tenantId is the pre-tenancy global key: it sees
+  // every session and is the only kind that manages tenants and other keys. Indexed in the
+  // AddApiKeyTenantId migration (column indexes live in migrations here, not entity decorators).
+  // Optional at the type level (null in the DB when unset) so enforcement branches on truthiness.
+  @Column({ type: 'varchar', length: 36, nullable: true })
+  tenantId?: string | null;
+
   @Column({ type: 'boolean', default: true })
   isActive!: boolean;
 
