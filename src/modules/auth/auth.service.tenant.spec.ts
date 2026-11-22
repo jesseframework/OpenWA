@@ -57,9 +57,7 @@ describe('AuthService tenant confinement (validateApiKey)', () => {
     };
     const sessionRepo = {
       find: jest.fn((opts: { where: { tenantId: string } }) =>
-        Promise.resolve(
-          sessions.filter(s => s.tenantId === opts.where.tenantId).map(s => ({ id: s.id }) as Session),
-        ),
+        Promise.resolve(sessions.filter(s => s.tenantId === opts.where.tenantId).map(s => ({ id: s.id }) as Session)),
       ),
     };
 

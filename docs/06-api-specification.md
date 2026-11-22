@@ -5485,10 +5485,10 @@ Create a tenant.
 
 **Request body** — `CreateTenantDto`
 
-| Field        | Type   | Required | Constraints                                   | Description                                                                                  |
-| ------------ | ------ | -------- | --------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `name`       | string | yes      | length 1–100                                  | Human-readable tenant name.                                                                  |
-| `externalId` | string | no       | length ≤ 190; unique across tenants when set  | External identity (e.g. WorkHub workspace id). Omit for a tenant managed only inside OpenWA. |
+| Field        | Type   | Required | Constraints                                  | Description                                                                                  |
+| ------------ | ------ | -------- | -------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `name`       | string | yes      | length 1–100                                 | Human-readable tenant name.                                                                  |
+| `externalId` | string | no       | length ≤ 190; unique across tenants when set | External identity (e.g. WorkHub workspace id). Omit for a tenant managed only inside OpenWA. |
 
 ```json
 { "name": "Acme Corp", "externalId": "wh_ws_4f1c2d" }
@@ -5566,10 +5566,10 @@ Update a tenant's `name`, `externalId`, or `isActive`.
 
 **Request body** — `UpdateTenantDto`
 
-| Field        | Type           | Required | Constraints                   | Description                                                                             |
-| ------------ | -------------- | -------- | ----------------------------- | --------------------------------------------------------------------------------------- |
-| `name`       | string         | no       | length 1–100                  | Applied if provided.                                                                    |
-| `externalId` | string \| null | no       | length ≤ 190; unique when set | Applied if not `undefined`; `null` (or a blank string) clears the mapping.              |
+| Field        | Type           | Required | Constraints                   | Description                                                                                 |
+| ------------ | -------------- | -------- | ----------------------------- | ------------------------------------------------------------------------------------------- |
+| `name`       | string         | no       | length 1–100                  | Applied if provided.                                                                        |
+| `externalId` | string \| null | no       | length ≤ 190; unique when set | Applied if not `undefined`; `null` (or a blank string) clears the mapping.                  |
 | `isActive`   | boolean        | no       |                               | Deactivate/reactivate. Advisory metadata — it does not by itself change session visibility. |
 
 **Response** `200` — `TenantResponseDto`

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.32.0] - 2026-11-22
+
+### Added
+
+- Multi-tenant isolation: an API key may carry a `tenantId` that confines it — fail-closed — to only the sessions of that tenant. Tenant membership resolves into the key's effective `allowedSessions` at authentication time, so the existing per-session, list, stats and scope enforcement applies unchanged; a tenant that owns no session is confined to nothing rather than to everything. A session is stamped with the creating key's tenant, and a tenant key is automatically fenced out of the key- and tenant-management routes.
+- `GET`/`POST`/`PUT`/`DELETE /api/tenants` — global-admin-only (`@RequireUnscopedKey`) tenant management, audited as `tenant_created` / `tenant_updated` / `tenant_deleted`. A tenant's `externalId` maps it to an external identity (unique when set); deleting a tenant is refused while any API key or session still references it.
+
 ## [0.31.0] - 2026-11-21
 
 ### Added

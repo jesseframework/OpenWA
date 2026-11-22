@@ -51,7 +51,7 @@ describe('apiKeyAuthorizationFingerprint', () => {
 
   // '' is what the create/update stamp collapses a blank tenant to; it must read identically to NULL so
   // a legacy/blank row does not look like a change and needlessly evict sockets.
-  it("reads an empty-string tenantId as no tenant (same as NULL)", () => {
+  it('reads an empty-string tenantId as no tenant (same as NULL)', () => {
     const blank = apiKeyAuthorizationFingerprint({ ...unscoped, expiresAt: null, tenantId: '' });
     const nul = apiKeyAuthorizationFingerprint({ ...unscoped, expiresAt: null, tenantId: null });
     expect(blank).toBe(nul);

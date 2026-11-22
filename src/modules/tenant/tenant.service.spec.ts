@@ -1,6 +1,9 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
+import { Repository } from 'typeorm';
 import { TenantService } from './tenant.service';
 import { Tenant } from './entities/tenant.entity';
+import { ApiKey } from '../auth/entities/api-key.entity';
+import { Session } from '../session/entities/session.entity';
 
 /** A driver error shaped like the unique-violation `isUniqueViolation` recognizes (sqlite). */
 const uniqueViolation = () =>
@@ -33,8 +36,11 @@ describe('TenantService', () => {
     };
     apiKeyRepo = { count: jest.fn(() => Promise.resolve(0)) };
     sessionRepo = { count: jest.fn(() => Promise.resolve(0)) };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    service = new TenantService(tenantRepo as any, apiKeyRepo as any, sessionRepo as any);
+    service = new TenantService(
+      tenantRepo as unknown as Repository<Tenant>,
+      apiKeyRepo as unknown as Repository<ApiKey>,
+      sessionRepo as unknown as Repository<Session>,
+    );
   });
 
   describe('create', () => {
@@ -74,19 +80,29 @@ describe('TenantService', () => {
 
   describe('update', () => {
     it('clears externalId when passed null', async () => {
-      tenantRepo.findOne.mockResolvedValueOnce({ id: 't-1', name: 'Acme', externalId: 'wh_1', isActive: true } as Tenant);
+      tenantRepo.findOne.mockResolvedValueOnce({
+        id: 't-1',
+        name: 'Acme',
+        externalId: 'wh_1',
+        isActive: true,
+      });
       await service.update('t-1', { externalId: null });
       expect(tenantRepo.save).toHaveBeenCalledWith(expect.objectContaining({ externalId: null }));
     });
 
     it('trims a renamed tenant and leaves unspecified fields untouched', async () => {
-      tenantRepo.findOne.mockResolvedValueOnce({ id: 't-1', name: 'Old', externalId: 'wh_1', isActive: true } as Tenant);
+      tenantRepo.findOne.mockResolvedValueOnce({
+        id: 't-1',
+        name: 'Old',
+        externalId: 'wh_1',
+        isActive: true,
+      });
       await service.update('t-1', { name: '  New  ' });
       expect(tenantRepo.save).toHaveBeenCalledWith(expect.objectContaining({ name: 'New', externalId: 'wh_1' }));
     });
 
     it('maps a duplicate externalId to 409 Conflict', async () => {
-      tenantRepo.findOne.mockResolvedValueOnce({ id: 't-1', name: 'Acme', externalId: null, isActive: true } as Tenant);
+      tenantRepo.findOne.mockResolvedValueOnce({ id: 't-1', name: 'Acme', externalId: null, isActive: true });
       tenantRepo.save.mockRejectedValueOnce(uniqueViolation());
       await expect(service.update('t-1', { externalId: 'dup' })).rejects.toBeInstanceOf(ConflictException);
     });
@@ -94,7 +110,7 @@ describe('TenantService', () => {
 
   describe('remove (fail-safe reference guard)', () => {
     beforeEach(() => {
-      tenantRepo.findOne.mockResolvedValue({ id: 't-1', name: 'Acme', externalId: null, isActive: true } as Tenant);
+      tenantRepo.findOne.mockResolvedValue({ id: 't-1', name: 'Acme', externalId: null, isActive: true });
     });
 
     it('deletes a tenant with no keys and no sessions', async () => {

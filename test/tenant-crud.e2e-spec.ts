@@ -57,9 +57,11 @@ describe('Tenant CRUD (e2e)', () => {
     expect(body.id).toBeTruthy();
     expect(body).toMatchObject({ name: 'Acme Corp', isActive: true, externalId: null });
 
-    await get(`/api/tenants/${body.id}`, adminKey).expect(200).expect(res => {
-      expect((res.body as { name: string }).name).toBe('Acme Corp');
-    });
+    await get(`/api/tenants/${body.id}`, adminKey)
+      .expect(200)
+      .expect(res => {
+        expect((res.body as { name: string }).name).toBe('Acme Corp');
+      });
 
     const list = await get('/api/tenants', adminKey).expect(200);
     expect((list.body as Array<{ id: string }>).some(t => t.id === body.id)).toBe(true);
@@ -86,9 +88,8 @@ describe('Tenant CRUD (e2e)', () => {
   it('fences a tenant-bound key out of tenant management', async () => {
     const t = await post('/api/tenants', adminKey, { name: 'Bound Co' }).expect(201);
     const tenantId = (t.body as { id: string }).id;
-    const tenantKey = (
-      await authService.createApiKey({ name: 'e2e-tenant-bound', role: ApiKeyRole.ADMIN, tenantId })
-    ).rawKey;
+    const tenantKey = (await authService.createApiKey({ name: 'e2e-tenant-bound', role: ApiKeyRole.ADMIN, tenantId }))
+      .rawKey;
     // The tenant key resolves to a non-empty allowedSessions, so @RequireUnscopedKey rejects it.
     await get('/api/tenants', tenantKey).expect(403);
   });

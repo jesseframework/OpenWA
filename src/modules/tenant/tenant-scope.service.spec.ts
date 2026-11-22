@@ -41,9 +41,7 @@ describe('TenantScopeService.effectiveAllowedSessions', () => {
     sessions = [];
     const sessionRepo = {
       find: jest.fn((opts: { where: { tenantId: string } }) =>
-        Promise.resolve(
-          sessions.filter(s => s.tenantId === opts.where.tenantId).map(s => ({ id: s.id }) as Session),
-        ),
+        Promise.resolve(sessions.filter(s => s.tenantId === opts.where.tenantId).map(s => ({ id: s.id }) as Session)),
       ),
     };
     const module: TestingModule = await Test.createTestingModule({

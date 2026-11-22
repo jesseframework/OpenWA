@@ -106,7 +106,10 @@ export class TenantController {
   @ApiOperation({ summary: 'Delete a tenant (global admin only); refused while keys/sessions reference it' })
   @ApiResponse({ status: 204, description: 'Tenant deleted' })
   @ApiResponse({ status: 404, description: 'Tenant not found.' })
-  @ApiResponse({ status: 409, description: 'Tenant still has API keys or sessions; retarget/remove them or deactivate instead.' })
+  @ApiResponse({
+    status: 409,
+    description: 'Tenant still has API keys or sessions; retarget/remove them or deactivate instead.',
+  })
   async remove(@Param('id') id: string, @Req() req: Request, @CurrentApiKey() actor?: ApiKey): Promise<void> {
     await this.tenantService.remove(id);
     await this.auditService.logInfo(AuditAction.TENANT_DELETED, {
