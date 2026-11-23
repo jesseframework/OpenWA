@@ -66,6 +66,7 @@
     "webhooks": "Webhooks",
     "templates": "Templates",
     "apiKeys": "API Keys",
+    "tenants": "Tenants",
     "messageTester": "Message Tester",
     "infrastructure": "Infrastructure",
     "plugins": "Plugins",
@@ -810,6 +811,8 @@
     "namePlaceholder": "e.g., Production Key",
     "nameTooShort": "Use at least 3 characters.",
     "rolesTitle": "Roles Reference",
+    "tenantLabel": "Tenant",
+    "tenantNone": "No tenant (global)",
     "roles": {
       "admin": "Admin",
       "operator": "Operator",
@@ -872,6 +875,7 @@
     },
     "restrictions": {
       "none": "None",
+      "tenant": "Tenant: {{name}}",
       "ips": "IPs: {{count}}",
       "chats": "Chats: {{count}}",
       "expires": "Expires {{date}}",
@@ -895,6 +899,49 @@
       "clear": "Remove expiry",
       "invalid": "Enter a complete date and time no later than the year 9999, or clear the field for a key that never expires."
     }
+  },
+  "tenants": {
+    "title": "Tenants",
+    "subtitle": "Group sessions by tenant, then confine an API key to a single tenant.",
+    "createBtn": "Create tenant",
+    "modalTitle": "Create tenant",
+    "editTitle": "Edit tenant",
+    "nameLabel": "Name",
+    "namePlaceholder": "Acme Corp",
+    "externalIdLabel": "External ID",
+    "externalIdPlaceholder": "wh_ws_4f1c2d",
+    "externalIdHint": "Optional. The external identity this tenant maps to — e.g. a WorkHub workspace id, so the same workspace resolves to this tenant on every login. Unique when set.",
+    "activeLabel": "Active",
+    "activeHint": "Deactivation is advisory — a key stays bound to the tenant until it is retargeted.",
+    "none": "—",
+    "columns": {
+      "name": "Name",
+      "externalId": "External ID",
+      "status": "Status",
+      "created": "Created",
+      "actions": "Actions"
+    },
+    "statuses": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "empty": {
+      "title": "No tenants yet",
+      "description": "Create a tenant, then scope an API key to it to confine the key to that tenant's sessions.",
+      "forbiddenTitle": "Not available for this key",
+      "forbiddenDesc": "Managing tenants needs an unscoped admin key.",
+      "loadErrorTitle": "Couldn't load tenants"
+    },
+    "confirm": {
+      "deleteTitle": "Delete tenant",
+      "delete": "Delete",
+      "deleteMessage": "Delete <name></name>? This can't be undone."
+    },
+    "actions": {
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "deleteBlocked": "This tenant still has API keys or sessions bound to it. Retarget or remove them first."
   },
   "logs": {
     "title": "Audit Logs",

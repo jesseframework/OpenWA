@@ -68,6 +68,7 @@
     "webhooks": "Webhooks",
     "templates": "Templates",
     "apiKeys": "Clés API",
+    "tenants": "Locataires",
     "messageTester": "Testeur de messages",
     "infrastructure": "Infrastructure",
     "plugins": "Plugins",
@@ -816,6 +817,8 @@
     "namePlaceholder": "ex : Clé de Production",
     "nameTooShort": "Utilisez au moins 3 caractères.",
     "rolesTitle": "Référence des rôles",
+    "tenantLabel": "Locataire",
+    "tenantNone": "Aucun locataire (global)",
     "roles": {
       "admin": "Administrateur",
       "operator": "Opérateur",
@@ -878,6 +881,7 @@
     },
     "restrictions": {
       "none": "Aucune",
+      "tenant": "Locataire : {{name}}",
       "ips": "IP : {{count}}",
       "chats": "Discussions : {{count}}",
       "expires": "Expire le {{date}}",
@@ -901,6 +905,49 @@
       "clear": "Retirer l'expiration",
       "invalid": "Saisissez une date et une heure complètes, au plus tard en l'an 9999, ou videz le champ pour une clé qui n'expire jamais."
     }
+  },
+  "tenants": {
+    "title": "Locataires",
+    "subtitle": "Regroupez les sessions par locataire, puis limitez une clé d'API à un seul locataire.",
+    "createBtn": "Créer un locataire",
+    "modalTitle": "Créer un locataire",
+    "editTitle": "Modifier le locataire",
+    "nameLabel": "Nom",
+    "namePlaceholder": "Acme Corp",
+    "externalIdLabel": "ID externe",
+    "externalIdPlaceholder": "wh_ws_4f1c2d",
+    "externalIdHint": "Facultatif. L'identité externe à laquelle ce locataire correspond — par ex. un ID d'espace de travail WorkHub, afin que le même espace renvoie à ce locataire à chaque connexion. Unique lorsqu'il est défini.",
+    "activeLabel": "Actif",
+    "activeHint": "La désactivation est indicative — une clé reste liée au locataire jusqu'à ce qu'elle soit réaffectée.",
+    "none": "—",
+    "columns": {
+      "name": "Nom",
+      "externalId": "ID externe",
+      "status": "Statut",
+      "created": "Créé",
+      "actions": "Actions"
+    },
+    "statuses": {
+      "active": "Actif",
+      "inactive": "Inactif"
+    },
+    "empty": {
+      "title": "Aucun locataire pour l'instant",
+      "description": "Créez un locataire, puis limitez-y une clé d'API pour restreindre la clé aux sessions de ce locataire.",
+      "forbiddenTitle": "Non disponible pour cette clé",
+      "forbiddenDesc": "La gestion des locataires nécessite une clé d'administrateur sans restriction.",
+      "loadErrorTitle": "Impossible de charger les locataires"
+    },
+    "confirm": {
+      "deleteTitle": "Supprimer le locataire",
+      "delete": "Supprimer",
+      "deleteMessage": "Supprimer <name></name> ? Cette action est irréversible."
+    },
+    "actions": {
+      "edit": "Modifier",
+      "delete": "Supprimer"
+    },
+    "deleteBlocked": "Ce locataire a encore des clés d'API ou des sessions qui lui sont liées. Réaffectez-les ou supprimez-les d'abord."
   },
   "logs": {
     "title": "Journaux d'audit",

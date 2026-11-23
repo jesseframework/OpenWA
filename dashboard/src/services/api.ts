@@ -208,6 +208,8 @@ export interface ApiKey {
   allowedSessions?: string[];
   allowedChats?: string[];
   isActive: boolean;
+  /** The tenant this key is confined to, or null for an unscoped/global key. */
+  tenantId?: string | null;
   expiresAt?: string;
   lastUsedAt?: string;
   usageCount: number;
@@ -217,6 +219,17 @@ export interface ApiKey {
 /** The creation response: every list/detail field plus the plaintext key, shown exactly once. */
 export interface CreatedApiKey extends ApiKey {
   apiKey: string;
+}
+
+/** A tenant: a named grouping an API key can be confined to, so the key sees only that tenant's sessions. */
+export interface Tenant {
+  id: string;
+  name: string;
+  /** External identity this tenant maps to (e.g. a WorkHub workspace id), or null. */
+  externalId: string | null;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface AuditLog {
@@ -1254,6 +1267,7 @@ export const apiKeyApi = {
     allowedSessions?: string[];
     expiresAt?: string;
     allowedChats?: string[];
+    tenantId?: string;
   }) =>
     request<CreatedApiKey>('/auth/api-keys', {
       method: 'POST',
@@ -1269,6 +1283,8 @@ export const apiKeyApi = {
       /** null removes the expiry. */
       expiresAt?: string | null;
       allowedChats?: string[];
+      /** null clears the tenant; a tenant id confines the key to that tenant. */
+      tenantId?: string | null;
     },
   ) =>
     request<ApiKey>(`/auth/api-keys/${id}`, {
@@ -1277,6 +1293,25 @@ export const apiKeyApi = {
     }),
   delete: (id: string) => request<void>(`/auth/api-keys/${id}`, { method: 'DELETE' }),
   revoke: (id: string) => request<ApiKey>(`/auth/api-keys/${id}/revoke`, { method: 'POST' }),
+};
+
+// =============================================================================
+// Tenants API (multi-tenancy — admin, unscoped keys only)
+// =============================================================================
+
+export const tenantApi = {
+  list: () => request<Tenant[]>('/tenants'),
+  create: (data: { name: string; externalId?: string }) =>
+    request<Tenant>('/tenants', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  update: (id: string, data: { name?: string; externalId?: string | null; isActive?: boolean }) =>
+    request<Tenant>(`/tenants/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  delete: (id: string) => request<void>(`/tenants/${id}`, { method: 'DELETE' }),
 };
 
 // =============================================================================

@@ -66,6 +66,7 @@
     "webhooks": "Webhooks",
     "templates": "Vorlagen",
     "apiKeys": "API-Schlüssel",
+    "tenants": "Mandanten",
     "messageTester": "Nachrichtentester",
     "infrastructure": "Infrastruktur",
     "plugins": "Plugins",
@@ -810,6 +811,8 @@
     "namePlaceholder": "z. B. Produktionsschlüssel",
     "nameTooShort": "Verwende mindestens 3 Zeichen.",
     "rolesTitle": "Rollenübersicht",
+    "tenantLabel": "Mandant",
+    "tenantNone": "Kein Mandant (global)",
     "roles": {
       "admin": "Administrator",
       "operator": "Operator",
@@ -872,6 +875,7 @@
     },
     "restrictions": {
       "none": "Keine",
+      "tenant": "Mandant: {{name}}",
       "ips": "IPs: {{count}}",
       "chats": "Chats: {{count}}",
       "expires": "Läuft ab am {{date}}",
@@ -895,6 +899,49 @@
       "clear": "Ablauf entfernen",
       "invalid": "Datum und Uhrzeit vollständig eingeben, höchstens bis zum Jahr 9999, oder das Feld leeren, damit der Schlüssel nie abläuft."
     }
+  },
+  "tenants": {
+    "title": "Mandanten",
+    "subtitle": "Sitzungen nach Mandant gruppieren und einen API-Schlüssel auf einen einzelnen Mandanten beschränken.",
+    "createBtn": "Mandant erstellen",
+    "modalTitle": "Mandant erstellen",
+    "editTitle": "Mandant bearbeiten",
+    "nameLabel": "Name",
+    "namePlaceholder": "Acme Corp",
+    "externalIdLabel": "Externe ID",
+    "externalIdPlaceholder": "wh_ws_4f1c2d",
+    "externalIdHint": "Optional. Die externe Identität, der dieser Mandant zugeordnet ist – z. B. eine WorkHub-Workspace-ID, damit derselbe Workspace bei jeder Anmeldung auf diesen Mandanten verweist. Eindeutig, wenn gesetzt.",
+    "activeLabel": "Aktiv",
+    "activeHint": "Die Deaktivierung ist nur ein Hinweis – ein Schlüssel bleibt an den Mandanten gebunden, bis er neu zugewiesen wird.",
+    "none": "—",
+    "columns": {
+      "name": "Name",
+      "externalId": "Externe ID",
+      "status": "Status",
+      "created": "Erstellt",
+      "actions": "Aktionen"
+    },
+    "statuses": {
+      "active": "Aktiv",
+      "inactive": "Inaktiv"
+    },
+    "empty": {
+      "title": "Noch keine Mandanten",
+      "description": "Erstelle einen Mandanten und beschränke dann einen API-Schlüssel darauf, um ihn auf die Sitzungen dieses Mandanten zu begrenzen.",
+      "forbiddenTitle": "Für diesen Schlüssel nicht verfügbar",
+      "forbiddenDesc": "Die Verwaltung von Mandanten erfordert einen uneingeschränkten Admin-Schlüssel.",
+      "loadErrorTitle": "Mandanten konnten nicht geladen werden"
+    },
+    "confirm": {
+      "deleteTitle": "Mandant löschen",
+      "delete": "Löschen",
+      "deleteMessage": "<name></name> löschen? Dies kann nicht rückgängig gemacht werden."
+    },
+    "actions": {
+      "edit": "Bearbeiten",
+      "delete": "Löschen"
+    },
+    "deleteBlocked": "An diesen Mandanten sind noch API-Schlüssel oder Sitzungen gebunden. Weise diese zuerst neu zu oder entferne sie."
   },
   "logs": {
     "title": "Audit-Protokolle",

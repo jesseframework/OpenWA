@@ -66,6 +66,7 @@
     "webhooks": "Webhook",
     "templates": "Templat",
     "apiKeys": "Kunci API",
+    "tenants": "Tenant",
     "messageTester": "Penguji Pesan",
     "infrastructure": "Infrastruktur",
     "plugins": "Plugin",
@@ -810,6 +811,8 @@
     "namePlaceholder": "mis. Production Key",
     "nameTooShort": "Gunakan minimal 3 karakter.",
     "rolesTitle": "Referensi Peran",
+    "tenantLabel": "Tenant",
+    "tenantNone": "Tanpa tenant (global)",
     "roles": {
       "admin": "Admin",
       "operator": "Operator",
@@ -872,6 +875,7 @@
     },
     "restrictions": {
       "none": "Tidak ada",
+      "tenant": "Tenant: {{name}}",
       "ips": "IP: {{count}}",
       "chats": "Obrolan: {{count}}",
       "expires": "Berlaku hingga {{date}}",
@@ -895,6 +899,49 @@
       "clear": "Hapus tanggal kedaluwarsa",
       "invalid": "Masukkan tanggal dan waktu yang lengkap, paling lambat tahun 9999, atau kosongkan kolom ini untuk kunci yang tidak pernah kedaluwarsa."
     }
+  },
+  "tenants": {
+    "title": "Tenant",
+    "subtitle": "Kelompokkan sesi menurut tenant, lalu batasi kunci API ke satu tenant.",
+    "createBtn": "Buat tenant",
+    "modalTitle": "Buat tenant",
+    "editTitle": "Edit tenant",
+    "nameLabel": "Nama",
+    "namePlaceholder": "Acme Corp",
+    "externalIdLabel": "ID eksternal",
+    "externalIdPlaceholder": "wh_ws_4f1c2d",
+    "externalIdHint": "Opsional. Identitas eksternal yang dipetakan ke tenant ini — mis. ID ruang kerja WorkHub, sehingga ruang kerja yang sama mengarah ke tenant ini pada setiap login. Unik bila diisi.",
+    "activeLabel": "Aktif",
+    "activeHint": "Penonaktifan hanya bersifat informatif — kunci tetap terikat ke tenant sampai dialihkan.",
+    "none": "—",
+    "columns": {
+      "name": "Nama",
+      "externalId": "ID eksternal",
+      "status": "Status",
+      "created": "Dibuat",
+      "actions": "Tindakan"
+    },
+    "statuses": {
+      "active": "Aktif",
+      "inactive": "Nonaktif"
+    },
+    "empty": {
+      "title": "Belum ada tenant",
+      "description": "Buat tenant, lalu batasi kunci API ke tenant tersebut untuk membatasi kunci pada sesi tenant itu.",
+      "forbiddenTitle": "Tidak tersedia untuk kunci ini",
+      "forbiddenDesc": "Mengelola tenant memerlukan kunci admin tanpa batasan.",
+      "loadErrorTitle": "Tidak dapat memuat tenant"
+    },
+    "confirm": {
+      "deleteTitle": "Hapus tenant",
+      "delete": "Hapus",
+      "deleteMessage": "Hapus <name></name>? Tindakan ini tidak dapat dibatalkan."
+    },
+    "actions": {
+      "edit": "Edit",
+      "delete": "Hapus"
+    },
+    "deleteBlocked": "Tenant ini masih memiliki kunci API atau sesi yang terikat. Alihkan atau hapus dahulu."
   },
   "logs": {
     "title": "Log Audit",

@@ -21,6 +21,7 @@ const Webhooks = lazy(() => import('./pages/Webhooks').then(m => ({ default: m.W
 const Templates = lazy(() => import('./pages/Templates').then(m => ({ default: m.Templates })));
 const Logs = lazy(() => import('./pages/Logs').then(m => ({ default: m.Logs })));
 const ApiKeys = lazy(() => import('./pages/ApiKeys').then(m => ({ default: m.ApiKeys })));
+const Tenants = lazy(() => import('./pages/Tenants').then(m => ({ default: m.Tenants })));
 const MessageTester = lazy(() => import('./pages/MessageTester').then(m => ({ default: m.MessageTester })));
 const NumberChecker = lazy(() => import('./pages/NumberChecker').then(m => ({ default: m.NumberChecker })));
 const Infrastructure = lazy(() => import('./pages/Infrastructure').then(m => ({ default: m.Infrastructure })));
@@ -130,6 +131,7 @@ function AppContent() {
                 <Route path="webhooks" element={<Webhooks />} />
                 <Route path="templates" element={<Templates />} />
                 {role === 'admin' && !scoped && <Route path="api-keys" element={<ApiKeys />} />}
+                {role === 'admin' && !scoped && <Route path="tenants" element={<Tenants />} />}
                 {role === 'admin' && <Route path="logs" element={<Logs />} />}
                 <Route path="message-tester" element={<MessageTester />} />
                 {role === 'admin' && !scoped && <Route path="infrastructure" element={<Infrastructure />} />}

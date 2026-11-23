@@ -67,6 +67,7 @@
     "numberChecker": "Verificador de números",
     "webhooks": "Webhooks",
     "apiKeys": "Claves API",
+    "tenants": "Inquilinos",
     "messageTester": "Probador de mensajes",
     "infrastructure": "Infraestructura",
     "plugins": "Plugins",
@@ -766,6 +767,8 @@
     "namePlaceholder": "ej., Clave de producción",
     "nameTooShort": "Usa al menos 3 caracteres.",
     "rolesTitle": "Referencia de roles",
+    "tenantLabel": "Inquilino",
+    "tenantNone": "Sin inquilino (global)",
     "roles": {
       "admin": "Administrador",
       "operator": "Operador",
@@ -828,6 +831,7 @@
     },
     "restrictions": {
       "none": "Ninguna",
+      "tenant": "Inquilino: {{name}}",
       "ips": "IP: {{count}}",
       "chats": "Chats: {{count}}",
       "expires": "Caduca el {{date}}",
@@ -851,6 +855,49 @@
       "clear": "Quitar caducidad",
       "invalid": "Introduce una fecha y hora completas, no posteriores al año 9999, o vacía el campo para una clave que nunca caduca."
     }
+  },
+  "tenants": {
+    "title": "Inquilinos",
+    "subtitle": "Agrupa sesiones por inquilino y limita una clave de API a un solo inquilino.",
+    "createBtn": "Crear inquilino",
+    "modalTitle": "Crear inquilino",
+    "editTitle": "Editar inquilino",
+    "nameLabel": "Nombre",
+    "namePlaceholder": "Acme Corp",
+    "externalIdLabel": "ID externo",
+    "externalIdPlaceholder": "wh_ws_4f1c2d",
+    "externalIdHint": "Opcional. La identidad externa a la que se asigna este inquilino, p. ej. un ID de espacio de trabajo de WorkHub, para que el mismo espacio se resuelva a este inquilino en cada inicio de sesión. Único cuando se define.",
+    "activeLabel": "Activo",
+    "activeHint": "La desactivación es informativa: una clave sigue vinculada al inquilino hasta que se reasigne.",
+    "none": "—",
+    "columns": {
+      "name": "Nombre",
+      "externalId": "ID externo",
+      "status": "Estado",
+      "created": "Creado",
+      "actions": "Acciones"
+    },
+    "statuses": {
+      "active": "Activo",
+      "inactive": "Inactivo"
+    },
+    "empty": {
+      "title": "Aún no hay inquilinos",
+      "description": "Crea un inquilino y luego limita una clave de API a él para restringir la clave a las sesiones de ese inquilino.",
+      "forbiddenTitle": "No disponible para esta clave",
+      "forbiddenDesc": "Gestionar inquilinos requiere una clave de administrador sin restricciones.",
+      "loadErrorTitle": "No se pudieron cargar los inquilinos"
+    },
+    "confirm": {
+      "deleteTitle": "Eliminar inquilino",
+      "delete": "Eliminar",
+      "deleteMessage": "¿Eliminar <name></name>? Esto no se puede deshacer."
+    },
+    "actions": {
+      "edit": "Editar",
+      "delete": "Eliminar"
+    },
+    "deleteBlocked": "Este inquilino todavía tiene claves de API o sesiones vinculadas. Reasígnalas o elimínalas primero."
   },
   "logs": {
     "title": "Registros de auditoría",
