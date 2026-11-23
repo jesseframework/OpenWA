@@ -46,6 +46,7 @@ import { PluginsApiModule } from './modules/plugins/plugins.module';
 import { AgentToolsModule } from './core/agent-tools/agent-tools.module';
 import { IntegrationModule } from './modules/integration/integration.module';
 import { SearchModule } from './modules/search/search.module';
+import { ConnectModule } from './modules/connect/connect.module';
 import { SqlitePermissionsBoot } from './database/sqlite-file-permissions';
 
 // Only import QueueModule if explicitly enabled to avoid Redis connection errors
@@ -283,6 +284,7 @@ if (dashboardServingEnabled && dashboardBuildPresent) {
     EventsModule, // WebSocket real-time events
     ...queueModules,
     AuthModule,
+    ConnectModule, // "Sign in with WorkHub" browser flow (off unless configured; see connect.config.ts)
     EngineModule,
     SessionModule,
     MessageModule,

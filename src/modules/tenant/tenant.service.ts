@@ -50,6 +50,36 @@ export class TenantService {
     }
   }
 
+  /**
+   * Resolve the tenant an external identity maps to, creating it on first sight. "Sign in with
+   * WorkHub" calls this with the WorkHub company id as externalId, so the same company always lands
+   * on the same OpenWA tenant. The partial-unique index on externalId is the authority: on the
+   * first-login race (two sign-ins for a brand-new company at once) the losing INSERT throws a unique
+   * violation, and we re-read and return the winner — so the caller always gets exactly one stable
+   * tenant, never a duplicate. An existing tenant's name is left as-is (renames happen through the
+   * admin CRUD, not silently on every login).
+   */
+  async findOrCreateByExternalId(externalId: string, name: string): Promise<Tenant> {
+    const normalized = TenantService.normalizeExternalId(externalId);
+    if (!normalized) throw new ConflictException('externalId is required to resolve a tenant');
+    const existing = await this.tenantRepository.findOne({ where: { externalId: normalized } });
+    if (existing) return existing;
+    const tenant = this.tenantRepository.create({
+      name: name.trim() || normalized,
+      externalId: normalized,
+      isActive: true,
+    });
+    try {
+      return await this.tenantRepository.save(tenant);
+    } catch (err) {
+      if (isUniqueViolation(err)) {
+        const won = await this.tenantRepository.findOne({ where: { externalId: normalized } });
+        if (won) return won;
+      }
+      throw err;
+    }
+  }
+
   async findAll(): Promise<Tenant[]> {
     return this.tenantRepository.find({ order: { createdAt: 'DESC' } });
   }
