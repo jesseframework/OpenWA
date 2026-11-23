@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.34.0] - 2026-11-23
+
+### Added
+
+- "Sign in with WorkHub": a person can sign in to the dashboard with their WorkHub account instead of pasting an API key. The browser round-trips to WorkHub's consent page (OAuth 2.0 + PKCE); on return, OpenWA maps their WorkHub company to a tenant — creating it on first sight, keyed on the WorkHub company id — and mints a short-lived, tenant-scoped API key, so the dashboard is confined to that tenant's sessions. The minted key is handed to the browser through a one-time, single-use claim, never in a URL. Off unless configured (`WORKHUB_SIGNIN_ENABLED` with `WORKHUB_API_URL` and `BASE_URL`); the login screen shows the "Sign in with WorkHub" button only when the backend reports it available. Minted keys default to the operator role (`WORKHUB_SIGNIN_ROLE`) and expire after 12 hours (`WORKHUB_SIGNIN_KEY_TTL_MINUTES`).
+
 ## [0.33.0] - 2026-11-23
 
 ### Added
