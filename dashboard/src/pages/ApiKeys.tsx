@@ -29,6 +29,7 @@ import {
   useDeleteApiKeyMutation,
   useRevokeApiKeyMutation,
   useSessionsQuery,
+  useTenantsQuery,
   useUpdateApiKeyMutation,
 } from '../hooks/queries';
 import { PageHeader } from '../components/PageHeader';
@@ -56,7 +57,7 @@ import './ApiKeys.css';
 
 const roleNames = ['admin', 'operator', 'viewer'] as const;
 
-const emptyKeyForm = { name: '', role: 'operator', allowedSessions: [] as string[], ips: '', chats: '', expires: '' };
+const emptyKeyForm = { name: '', role: 'operator', allowedSessions: [] as string[], ips: '', chats: '', expires: '', tenantId: '' };
 
 // What the gateway lists for the key seeded from API_MASTER_KEY: its first characters are secret, so none is shown.
 const MASTER_KEY_PREFIX = '(master key)';
@@ -244,6 +245,7 @@ export function ApiKeys() {
   useDocumentTitle(t('apiKeys.title'));
   const { data: apiKeys = [], isLoading: loading, error: apiKeysError } = useApiKeysQuery();
   const { data: sessions = [] } = useSessionsQuery();
+  const { data: tenants = [] } = useTenantsQuery();
   const createMutation = useCreateApiKeyMutation();
   const updateMutation = useUpdateApiKeyMutation();
   const deleteMutation = useDeleteApiKeyMutation();
@@ -300,6 +302,7 @@ export function ApiKeys() {
         ...(allowedIps.length > 0 ? { allowedIps } : {}),
         ...(allowedChats.length > 0 ? { allowedChats } : {}),
         ...(newKey.expires ? { expiresAt: new Date(newKey.expires).toISOString() } : {}),
+        ...(newKey.tenantId ? { tenantId: newKey.tenantId } : {}),
       });
       setCreatedKey(created.apiKey || null);
       setNewKey(emptyKeyForm);
@@ -443,7 +446,7 @@ export function ApiKeys() {
           id: 'restrictions',
           header: () => t('apiKeys.columns.restrictions'),
           cell: info => {
-            const { allowedIps, allowedChats, expiresAt } = info.row.original;
+            const { allowedIps, allowedChats, expiresAt, tenantId } = info.row.original;
             const badges = [];
             if (allowedIps?.length) {
               badges.push(
@@ -466,6 +469,14 @@ export function ApiKeys() {
                   {isExpired(expiresAt)
                     ? t('apiKeys.restrictions.expired', { date })
                     : t('apiKeys.restrictions.expires', { date })}
+                </span>,
+              );
+            }
+            const tenantName = tenantId ? tenants.find(tn => tn.id === tenantId)?.name : undefined;
+            if (tenantName) {
+              badges.push(
+                <span key="tenant" className="restriction-badge" title={tenantName}>
+                  {t('apiKeys.restrictions.tenant', { name: tenantName })}
                 </span>,
               );
             }
@@ -532,7 +543,7 @@ export function ApiKeys() {
           },
         }),
       ]),
-    [t, sessions],
+    [t, sessions, tenants],
   );
 
   const table = useTable({
@@ -662,6 +673,23 @@ export function ApiKeys() {
                   </option>
                 ))}
               </select>
+              {tenants.length > 0 && (
+                <>
+                  <label htmlFor="ak-tenant">{t('apiKeys.tenantLabel')}</label>
+                  <select
+                    id="ak-tenant"
+                    value={newKey.tenantId}
+                    onChange={e => setNewKey({ ...newKey, tenantId: e.target.value })}
+                  >
+                    <option value="">{t('apiKeys.tenantNone')}</option>
+                    {tenants.map(tn => (
+                      <option key={tn.id} value={tn.id}>
+                        {tn.name}
+                      </option>
+                    ))}
+                  </select>
+                </>
+              )}
               {canScopeSessions(newKey.role) && (
                 <SessionScopePicker
                   sessions={sessions}

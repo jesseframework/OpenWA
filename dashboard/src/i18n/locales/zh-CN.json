@@ -66,6 +66,7 @@
     "webhooks": "Webhooks",
     "templates": "模板",
     "apiKeys": "API 密钥",
+    "tenants": "租户",
     "messageTester": "消息测试器",
     "infrastructure": "基础设施",
     "plugins": "插件",
@@ -810,6 +811,8 @@
     "namePlaceholder": "例如：Production Key",
     "nameTooShort": "请至少输入 3 个字符。",
     "rolesTitle": "角色参考",
+    "tenantLabel": "租户",
+    "tenantNone": "无租户（全局）",
     "roles": {
       "admin": "管理员",
       "operator": "操作员",
@@ -872,6 +875,7 @@
     },
     "restrictions": {
       "none": "无",
+      "tenant": "租户：{{name}}",
       "ips": "IP：{{count}}",
       "chats": "聊天：{{count}}",
       "expires": "{{date}} 过期",
@@ -895,6 +899,49 @@
       "clear": "移除过期时间",
       "invalid": "请填写不晚于 9999 年的完整日期和时间，或清空此字段使密钥永不过期。"
     }
+  },
+  "tenants": {
+    "title": "租户",
+    "subtitle": "按租户对会话进行分组，然后将 API 密钥限制到单个租户。",
+    "createBtn": "创建租户",
+    "modalTitle": "创建租户",
+    "editTitle": "编辑租户",
+    "nameLabel": "名称",
+    "namePlaceholder": "Acme Corp",
+    "externalIdLabel": "外部 ID",
+    "externalIdPlaceholder": "wh_ws_4f1c2d",
+    "externalIdHint": "可选。此租户映射到的外部身份，例如 WorkHub 工作区 ID，以便每次登录时同一工作区都解析到此租户。设置后唯一。",
+    "activeLabel": "启用",
+    "activeHint": "停用仅作提示——密钥在被重新指定之前始终绑定到该租户。",
+    "none": "—",
+    "columns": {
+      "name": "名称",
+      "externalId": "外部 ID",
+      "status": "状态",
+      "created": "创建时间",
+      "actions": "操作"
+    },
+    "statuses": {
+      "active": "启用",
+      "inactive": "停用"
+    },
+    "empty": {
+      "title": "暂无租户",
+      "description": "创建一个租户，然后将 API 密钥限定到该租户，以将密钥限制在该租户的会话范围内。",
+      "forbiddenTitle": "此密钥不可用",
+      "forbiddenDesc": "管理租户需要不受限制的管理员密钥。",
+      "loadErrorTitle": "无法加载租户"
+    },
+    "confirm": {
+      "deleteTitle": "删除租户",
+      "delete": "删除",
+      "deleteMessage": "删除 <name></name>？此操作无法撤消。"
+    },
+    "actions": {
+      "edit": "编辑",
+      "delete": "删除"
+    },
+    "deleteBlocked": "此租户仍绑定有 API 密钥或会话。请先重新指定或移除它们。"
   },
   "logs": {
     "title": "审计日志",

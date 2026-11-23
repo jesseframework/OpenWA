@@ -67,6 +67,7 @@
     "numberChecker": "Verificador de números",
     "webhooks": "Webhooks",
     "apiKeys": "Chaves API",
+    "tenants": "Locatários",
     "messageTester": "Testador de mensagens",
     "infrastructure": "Infraestrutura",
     "plugins": "Plugins",
@@ -766,6 +767,8 @@
     "namePlaceholder": "ex.: Chave de produção",
     "nameTooShort": "Use pelo menos 3 caracteres.",
     "rolesTitle": "Referência de funções",
+    "tenantLabel": "Locatário",
+    "tenantNone": "Sem locatário (global)",
     "roles": {
       "admin": "Administrador",
       "operator": "Operador",
@@ -828,6 +831,7 @@
     },
     "restrictions": {
       "none": "Nenhuma",
+      "tenant": "Locatário: {{name}}",
       "ips": "IPs: {{count}}",
       "chats": "Chats: {{count}}",
       "expires": "Expira em {{date}}",
@@ -851,6 +855,49 @@
       "clear": "Remover expiração",
       "invalid": "Informe data e hora completas, até o ano 9999, ou limpe o campo para uma chave que nunca expira."
     }
+  },
+  "tenants": {
+    "title": "Locatários",
+    "subtitle": "Agrupe sessões por locatário e limite uma chave de API a um único locatário.",
+    "createBtn": "Criar locatário",
+    "modalTitle": "Criar locatário",
+    "editTitle": "Editar locatário",
+    "nameLabel": "Nome",
+    "namePlaceholder": "Acme Corp",
+    "externalIdLabel": "ID externo",
+    "externalIdPlaceholder": "wh_ws_4f1c2d",
+    "externalIdHint": "Opcional. A identidade externa à qual este locatário está associado — por ex. um ID de workspace do WorkHub, para que o mesmo workspace resolva para este locatário a cada login. Único quando definido.",
+    "activeLabel": "Ativo",
+    "activeHint": "A desativação é informativa — uma chave permanece vinculada ao locatário até ser reatribuída.",
+    "none": "—",
+    "columns": {
+      "name": "Nome",
+      "externalId": "ID externo",
+      "status": "Status",
+      "created": "Criado",
+      "actions": "Ações"
+    },
+    "statuses": {
+      "active": "Ativo",
+      "inactive": "Inativo"
+    },
+    "empty": {
+      "title": "Nenhum locatário ainda",
+      "description": "Crie um locatário e limite uma chave de API a ele para restringir a chave às sessões desse locatário.",
+      "forbiddenTitle": "Indisponível para esta chave",
+      "forbiddenDesc": "Gerenciar locatários exige uma chave de administrador sem restrições.",
+      "loadErrorTitle": "Não foi possível carregar os locatários"
+    },
+    "confirm": {
+      "deleteTitle": "Excluir locatário",
+      "delete": "Excluir",
+      "deleteMessage": "Excluir <name></name>? Isso não pode ser desfeito."
+    },
+    "actions": {
+      "edit": "Editar",
+      "delete": "Excluir"
+    },
+    "deleteBlocked": "Este locatário ainda tem chaves de API ou sessões vinculadas. Reatribua ou remova-as primeiro."
   },
   "logs": {
     "title": "Registros de auditoria",

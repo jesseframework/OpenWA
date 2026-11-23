@@ -66,6 +66,7 @@
     "webhooks": "웹훅",
     "templates": "템플릿",
     "apiKeys": "API 키",
+    "tenants": "테넌트",
     "messageTester": "메시지 테스터",
     "infrastructure": "인프라",
     "plugins": "플러그인",
@@ -810,6 +811,8 @@
     "namePlaceholder": "예: Production Key",
     "nameTooShort": "3자 이상 입력하세요.",
     "rolesTitle": "역할 안내",
+    "tenantLabel": "테넌트",
+    "tenantNone": "테넌트 없음(전역)",
     "roles": {
       "admin": "관리자",
       "operator": "운영자",
@@ -872,6 +875,7 @@
     },
     "restrictions": {
       "none": "없음",
+      "tenant": "테넌트: {{name}}",
       "ips": "IP: {{count}}",
       "chats": "채팅: {{count}}",
       "expires": "{{date}}에 만료",
@@ -895,6 +899,49 @@
       "clear": "만료 제거",
       "invalid": "9999년까지의 날짜와 시간을 모두 입력하거나, 만료되지 않는 키는 필드를 비우세요."
     }
+  },
+  "tenants": {
+    "title": "테넌트",
+    "subtitle": "세션을 테넌트별로 그룹화한 다음 API 키를 단일 테넌트로 제한합니다.",
+    "createBtn": "테넌트 생성",
+    "modalTitle": "테넌트 생성",
+    "editTitle": "테넌트 편집",
+    "nameLabel": "이름",
+    "namePlaceholder": "Acme Corp",
+    "externalIdLabel": "외부 ID",
+    "externalIdPlaceholder": "wh_ws_4f1c2d",
+    "externalIdHint": "선택 사항. 이 테넌트가 매핑되는 외부 ID — 예: WorkHub 워크스페이스 ID. 그러면 로그인할 때마다 동일한 워크스페이스가 이 테넌트로 확인됩니다. 설정 시 고유합니다.",
+    "activeLabel": "활성",
+    "activeHint": "비활성화는 참고용입니다 — 키는 다시 지정될 때까지 테넌트에 바인딩된 상태로 유지됩니다.",
+    "none": "—",
+    "columns": {
+      "name": "이름",
+      "externalId": "외부 ID",
+      "status": "상태",
+      "created": "생성됨",
+      "actions": "작업"
+    },
+    "statuses": {
+      "active": "활성",
+      "inactive": "비활성"
+    },
+    "empty": {
+      "title": "아직 테넌트가 없습니다",
+      "description": "테넌트를 만든 다음 API 키를 해당 테넌트로 범위 지정하여 키를 그 테넌트의 세션으로 제한하세요.",
+      "forbiddenTitle": "이 키에서는 사용할 수 없음",
+      "forbiddenDesc": "테넌트를 관리하려면 범위가 없는 관리자 키가 필요합니다.",
+      "loadErrorTitle": "테넌트를 불러오지 못했습니다"
+    },
+    "confirm": {
+      "deleteTitle": "테넌트 삭제",
+      "delete": "삭제",
+      "deleteMessage": "<name></name>을(를) 삭제할까요? 되돌릴 수 없습니다."
+    },
+    "actions": {
+      "edit": "편집",
+      "delete": "삭제"
+    },
+    "deleteBlocked": "이 테넌트에는 아직 바인딩된 API 키나 세션이 있습니다. 먼저 다시 지정하거나 제거하세요."
   },
   "logs": {
     "title": "감사 로그",

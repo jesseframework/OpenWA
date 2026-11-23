@@ -26,6 +26,9 @@ const SAME_EVERYWHERE = new Set([
   'messageTester.forwardFromPlaceholder',
   'messageTester.filenamePlaceholder',
   'messageTester.contactNamePlaceholder',
+  // Example inputs shown in the tenant form — the same sample everywhere.
+  'tenants.namePlaceholder',
+  'tenants.externalIdPlaceholder',
 ]);
 const isFontName = (key: string) => key.startsWith('chats.status.fonts.') && key !== 'chats.status.fonts.system';
 // Hebrew writes the terms Session and proxy in Latin script, in its sentences as in its labels.

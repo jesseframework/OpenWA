@@ -70,6 +70,7 @@
     "webhooks": "Webhooks",
     "templates": "תבניות",
     "apiKeys": "מפתחות API",
+    "tenants": "דיירים",
     "messageTester": "בדיקת הודעות",
     "infrastructure": "תשתית",
     "plugins": "תוספים",
@@ -823,6 +824,8 @@
     "namePlaceholder": "לדוגמה: Production Key",
     "nameTooShort": "השתמשו לפחות ב-3 תווים.",
     "rolesTitle": "מדריך תפקידים",
+    "tenantLabel": "דייר",
+    "tenantNone": "ללא דייר (כללי)",
     "roles": {
       "admin": "מנהל",
       "operator": "מפעיל",
@@ -885,6 +888,7 @@
     },
     "restrictions": {
       "none": "אין",
+      "tenant": "דייר: {{name}}",
       "ips": "כתובות IP: {{count}}",
       "chats": "צ'אטים: {{count}}",
       "expires": "פג ב-{{date}}",
@@ -908,6 +912,49 @@
       "clear": "הסרת התפוגה",
       "invalid": "הזינו תאריך ושעה מלאים, לא מאוחר משנת 9999, או רוקנו את השדה למפתח שאינו פג לעולם."
     }
+  },
+  "tenants": {
+    "title": "דיירים",
+    "subtitle": "קבצו Sessions לפי דייר, ולאחר מכן הגבילו מפתח API לדייר יחיד.",
+    "createBtn": "יצירת דייר",
+    "modalTitle": "יצירת דייר",
+    "editTitle": "עריכת דייר",
+    "nameLabel": "שם",
+    "namePlaceholder": "Acme Corp",
+    "externalIdLabel": "מזהה חיצוני",
+    "externalIdPlaceholder": "wh_ws_4f1c2d",
+    "externalIdHint": "אופציונלי. הזהות החיצונית שאליה ממופה דייר זה — למשל מזהה סביבת עבודה של WorkHub, כך שאותה סביבת עבודה תפנה לדייר זה בכל כניסה. ייחודי כאשר מוגדר.",
+    "activeLabel": "פעיל",
+    "activeHint": "ההשבתה היא הנחיה בלבד — מפתח נשאר משויך לדייר עד שיופנה מחדש.",
+    "none": "—",
+    "columns": {
+      "name": "שם",
+      "externalId": "מזהה חיצוני",
+      "status": "סטטוס",
+      "created": "נוצר",
+      "actions": "פעולות"
+    },
+    "statuses": {
+      "active": "פעיל",
+      "inactive": "לא פעיל"
+    },
+    "empty": {
+      "title": "עדיין אין דיירים",
+      "description": "צרו דייר, ולאחר מכן הגבילו אליו מפתח API כדי לצמצם את המפתח ל-Sessions של אותו דייר.",
+      "forbiddenTitle": "לא זמין עבור מפתח זה",
+      "forbiddenDesc": "ניהול דיירים דורש מפתח מנהל ללא הגבלת היקף.",
+      "loadErrorTitle": "לא ניתן לטעון דיירים"
+    },
+    "confirm": {
+      "deleteTitle": "מחיקת דייר",
+      "delete": "מחיקה",
+      "deleteMessage": "למחוק את <name></name>? לא ניתן לבטל פעולה זו."
+    },
+    "actions": {
+      "edit": "עריכה",
+      "delete": "מחיקה"
+    },
+    "deleteBlocked": "לדייר זה עדיין משויכים מפתחות API או Sessions. הפנו אותם מחדש או הסירו אותם תחילה."
   },
   "logs": {
     "title": "לוגים",

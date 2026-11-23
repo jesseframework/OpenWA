@@ -13,6 +13,7 @@ import {
   Send,
   Server,
   Puzzle,
+  Building2,
   Sun,
   Moon,
   Monitor,
@@ -46,6 +47,8 @@ const allNavItems = [
   { to: '/webhooks', icon: Webhook, key: 'webhooks' as const, adminOnly: false },
   { to: '/templates', icon: ClipboardList, key: 'templates' as const, adminOnly: false },
   { to: '/api-keys', icon: Key, key: 'apiKeys' as const, adminOnly: true, unscopedOnly: true },
+  // Backend /tenants is ADMIN-only and refuses a tenant/session-scoped key.
+  { to: '/tenants', icon: Building2, key: 'tenants' as const, adminOnly: true, unscopedOnly: true },
   { to: '/message-tester', icon: Send, key: 'messageTester' as const, adminOnly: false },
   // Backend /infra/* is ADMIN-only; hide the nav item from non-admins (UX + defense-in-depth).
   { to: '/infrastructure', icon: Server, key: 'infrastructure' as const, adminOnly: true, unscopedOnly: true },

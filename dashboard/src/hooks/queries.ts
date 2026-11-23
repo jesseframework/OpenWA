@@ -4,6 +4,7 @@ import {
   webhookApi,
   templateApi,
   apiKeyApi,
+  tenantApi,
   auditApi,
   infraApi,
   pluginsApi,
@@ -28,6 +29,7 @@ export const queryKeys = {
   webhooks: ['webhooks'] as const,
   templates: (sessionId: string) => ['sessions', sessionId, 'templates'] as const,
   apiKeys: ['apiKeys'] as const,
+  tenants: ['tenants'] as const,
   logs: (params: { severity?: string; page: number; limit: number }) => ['logs', params] as const,
   infraStatus: ['infra', 'status'] as const,
   plugins: ['plugins'] as const,
@@ -214,6 +216,7 @@ export function useCreateApiKeyMutation() {
       allowedSessions?: string[];
       allowedChats?: string[];
       expiresAt?: string;
+      tenantId?: string;
     }) => apiKeyApi.create(data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.apiKeys });
@@ -236,6 +239,7 @@ export function useUpdateApiKeyMutation() {
         allowedSessions?: string[];
         allowedChats?: string[];
         expiresAt?: string | null;
+        tenantId?: string | null;
       };
     }) => apiKeyApi.update(id, data),
     onSuccess: () => {
@@ -259,6 +263,49 @@ export function useRevokeApiKeyMutation() {
   return useMutation({
     mutationFn: (id: string) => apiKeyApi.revoke(id),
     onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.apiKeys });
+    },
+  });
+}
+
+// ── Tenant Queries ────────────────────────────────────────────────────
+
+export function useTenantsQuery() {
+  return useQuery({
+    queryKey: queryKeys.tenants,
+    queryFn: tenantApi.list,
+    staleTime: 30_000,
+  });
+}
+
+export function useCreateTenantMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { name: string; externalId?: string }) => tenantApi.create(data),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.tenants });
+    },
+  });
+}
+
+export function useUpdateTenantMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: { name?: string; externalId?: string | null; isActive?: boolean } }) =>
+      tenantApi.update(id, data),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.tenants });
+    },
+  });
+}
+
+export function useDeleteTenantMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => tenantApi.delete(id),
+    onSuccess: () => {
+      // Deleting a tenant can change which sessions a key resolves to.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.tenants });
       void queryClient.invalidateQueries({ queryKey: queryKeys.apiKeys });
     },
   });

@@ -68,6 +68,7 @@
     "webhooks": "Webhook",
     "templates": "Modelli",
     "apiKeys": "Chiavi API",
+    "tenants": "Tenant",
     "messageTester": "Messaggio di prova",
     "infrastructure": "Infrastruttura",
     "plugins": "Plugin",
@@ -816,6 +817,8 @@
     "namePlaceholder": "es., Chiave di Produzione",
     "nameTooShort": "Usa almeno 3 caratteri.",
     "rolesTitle": "Riferimento Ruoli",
+    "tenantLabel": "Tenant",
+    "tenantNone": "Nessun tenant (globale)",
     "roles": {
       "admin": "Amministratore",
       "operator": "Operatore",
@@ -878,6 +881,7 @@
     },
     "restrictions": {
       "none": "Nessuna",
+      "tenant": "Tenant: {{name}}",
       "ips": "IP: {{count}}",
       "chats": "Chat: {{count}}",
       "expires": "Scade il {{date}}",
@@ -901,6 +905,49 @@
       "clear": "Rimuovi scadenza",
       "invalid": "Inserisci data e ora complete, non oltre l'anno 9999, oppure svuota il campo per una chiave che non scade mai."
     }
+  },
+  "tenants": {
+    "title": "Tenant",
+    "subtitle": "Raggruppa le sessioni per tenant, quindi limita una chiave API a un singolo tenant.",
+    "createBtn": "Crea tenant",
+    "modalTitle": "Crea tenant",
+    "editTitle": "Modifica tenant",
+    "nameLabel": "Nome",
+    "namePlaceholder": "Acme Corp",
+    "externalIdLabel": "ID esterno",
+    "externalIdPlaceholder": "wh_ws_4f1c2d",
+    "externalIdHint": "Facoltativo. L'identità esterna a cui è associato questo tenant, ad es. un ID workspace WorkHub, così lo stesso workspace corrisponde a questo tenant a ogni accesso. Univoco se impostato.",
+    "activeLabel": "Attivo",
+    "activeHint": "La disattivazione è indicativa: una chiave resta associata al tenant finché non viene riassegnata.",
+    "none": "—",
+    "columns": {
+      "name": "Nome",
+      "externalId": "ID esterno",
+      "status": "Stato",
+      "created": "Creato",
+      "actions": "Azioni"
+    },
+    "statuses": {
+      "active": "Attivo",
+      "inactive": "Inattivo"
+    },
+    "empty": {
+      "title": "Ancora nessun tenant",
+      "description": "Crea un tenant, poi limita una chiave API ad esso per restringere la chiave alle sessioni di quel tenant.",
+      "forbiddenTitle": "Non disponibile per questa chiave",
+      "forbiddenDesc": "La gestione dei tenant richiede una chiave admin senza restrizioni.",
+      "loadErrorTitle": "Impossibile caricare i tenant"
+    },
+    "confirm": {
+      "deleteTitle": "Elimina tenant",
+      "delete": "Elimina",
+      "deleteMessage": "Eliminare <name></name>? L'operazione non può essere annullata."
+    },
+    "actions": {
+      "edit": "Modifica",
+      "delete": "Elimina"
+    },
+    "deleteBlocked": "Questo tenant ha ancora chiavi API o sessioni associate. Riassegnale o rimuovile prima."
   },
   "logs": {
     "title": "Log di Controllo",

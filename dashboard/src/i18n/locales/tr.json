@@ -66,6 +66,7 @@
     "webhooks": "Webhook'lar",
     "templates": "Şablonlar",
     "apiKeys": "API Anahtarları",
+    "tenants": "Kiracılar",
     "messageTester": "Mesaj Test Aracı",
     "infrastructure": "Altyapı",
     "plugins": "Eklentiler",
@@ -810,6 +811,8 @@
     "namePlaceholder": "ör. Prodüksiyon Anahtarı",
     "nameTooShort": "En az 3 karakter kullanın.",
     "rolesTitle": "Roller Referansı",
+    "tenantLabel": "Kiracı",
+    "tenantNone": "Kiracı yok (genel)",
     "roles": {
       "admin": "Yönetici (Admin)",
       "operator": "Operatör",
@@ -872,6 +875,7 @@
     },
     "restrictions": {
       "none": "Yok",
+      "tenant": "Kiracı: {{name}}",
       "ips": "IP'ler: {{count}}",
       "chats": "Sohbetler: {{count}}",
       "expires": "Son kullanma: {{date}}",
@@ -895,6 +899,49 @@
       "clear": "Son kullanma tarihini kaldır",
       "invalid": "9999 yılını geçmeyen eksiksiz bir tarih ve saat girin ya da süresi hiç dolmayan bir anahtar için alanı temizleyin."
     }
+  },
+  "tenants": {
+    "title": "Kiracılar",
+    "subtitle": "Oturumları kiracıya göre gruplayın, ardından bir API anahtarını tek bir kiracıyla sınırlayın.",
+    "createBtn": "Kiracı oluştur",
+    "modalTitle": "Kiracı oluştur",
+    "editTitle": "Kiracıyı düzenle",
+    "nameLabel": "Ad",
+    "namePlaceholder": "Acme Corp",
+    "externalIdLabel": "Harici kimlik",
+    "externalIdPlaceholder": "wh_ws_4f1c2d",
+    "externalIdHint": "İsteğe bağlı. Bu kiracının eşlendiği harici kimlik — ör. bir WorkHub çalışma alanı kimliği; böylece aynı çalışma alanı her oturum açışta bu kiracıya çözümlenir. Ayarlandığında benzersizdir.",
+    "activeLabel": "Etkin",
+    "activeHint": "Devre dışı bırakma yalnızca bilgilendirmedir — bir anahtar yeniden yönlendirilene kadar kiracıya bağlı kalır.",
+    "none": "—",
+    "columns": {
+      "name": "Ad",
+      "externalId": "Harici kimlik",
+      "status": "Durum",
+      "created": "Oluşturuldu",
+      "actions": "İşlemler"
+    },
+    "statuses": {
+      "active": "Etkin",
+      "inactive": "Pasif"
+    },
+    "empty": {
+      "title": "Henüz kiracı yok",
+      "description": "Bir kiracı oluşturun, ardından anahtarı o kiracının oturumlarıyla sınırlamak için bir API anahtarını ona kapsamlayın.",
+      "forbiddenTitle": "Bu anahtar için kullanılamaz",
+      "forbiddenDesc": "Kiracıları yönetmek, kapsamsız bir yönetici anahtarı gerektirir.",
+      "loadErrorTitle": "Kiracılar yüklenemedi"
+    },
+    "confirm": {
+      "deleteTitle": "Kiracıyı sil",
+      "delete": "Sil",
+      "deleteMessage": "<name></name> silinsin mi? Bu geri alınamaz."
+    },
+    "actions": {
+      "edit": "Düzenle",
+      "delete": "Sil"
+    },
+    "deleteBlocked": "Bu kiracıya hâlâ bağlı API anahtarları veya oturumlar var. Önce bunları yeniden yönlendirin veya kaldırın."
   },
   "logs": {
     "title": "Denetim Kayıtları (Audit Logs)",
