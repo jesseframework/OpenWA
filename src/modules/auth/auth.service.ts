@@ -269,7 +269,7 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
     return this.apiKeyRepository.save(apiKey);
   }
 
-  async createApiKey(dto: CreateApiKeyDto): Promise<{ apiKey: ApiKey; rawKey: string }> {
+  async createApiKey(dto: CreateApiKeyDto, actorTenantId?: string | null): Promise<{ apiKey: ApiKey; rawKey: string }> {
     // Generate secure random key: owa_k1_<32 bytes hex>
     const rawKey = `owa_k1_${randomBytes(32).toString('hex')}`;
     const keyHash = this.hashKey(rawKey);
@@ -284,8 +284,11 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
       allowedSessions: normalizeScopeList(dto.allowedSessions),
       allowedChats: normalizeChatAllowList(dto.allowedChats),
       expiresAt: dto.expiresAt ? AuthService.parseExpiry(dto.expiresAt) : null,
+      // A tenant-admin actor (actorTenantId set) may mint keys ONLY inside its OWN tenant: its tenantId
+      // is forced here, overriding any tenantId in the body — so a tenant admin can neither mint a
+      // global key nor plant one in another tenant. A global actor (null/undefined) honors the body.
       // '' / whitespace → NULL (global), matching the `!apiKey.tenantId` truthiness the resolver uses.
-      tenantId: dto.tenantId?.trim() || null,
+      tenantId: actorTenantId ? actorTenantId : dto.tenantId?.trim() || null,
     });
 
     const saved = await this.apiKeyRepository.save(apiKey);
@@ -299,32 +302,52 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
     return { apiKey: saved, rawKey };
   }
 
-  async findAll(): Promise<ApiKey[]> {
+  /**
+   * Confinement for the key-management surface (@TenantSelfManage routes): a tenant-admin key
+   * (actorTenantId set) may act only on keys of its OWN tenant; a global key (actorTenantId
+   * null/undefined) is unconfined. A cross-tenant target is reported as NotFound — never Forbidden —
+   * so a tenant cannot probe for the existence of another tenant's keys.
+   */
+  private assertKeyVisibleToActor(target: ApiKey, actorTenantId?: string | null): void {
+    if (actorTenantId && target.tenantId !== actorTenantId) {
+      throw new NotFoundException(`API key with id '${target.id}' not found`);
+    }
+  }
+
+  async findAll(actorTenantId?: string | null): Promise<ApiKey[]> {
     return this.apiKeyRepository.find({
+      // A tenant-admin actor sees only its tenant's keys; a global actor sees all.
+      where: actorTenantId ? { tenantId: actorTenantId } : {},
       order: { createdAt: 'DESC' },
     });
   }
 
-  async findOne(id: string): Promise<ApiKey> {
+  async findOne(id: string, actorTenantId?: string | null): Promise<ApiKey> {
     const apiKey = await this.apiKeyRepository.findOne({ where: { id } });
     if (!apiKey) {
       throw new NotFoundException(`API key with id '${id}' not found`);
     }
+    this.assertKeyVisibleToActor(apiKey, actorTenantId);
     return apiKey;
   }
 
-  async update(id: string, dto: UpdateApiKeyDto): Promise<ApiKey> {
-    const apiKey = await this.findOne(id);
+  async update(id: string, dto: UpdateApiKeyDto, actorTenantId?: string | null): Promise<ApiKey> {
+    const apiKey = await this.findOne(id, actorTenantId);
 
-    // Confining the key to a tenant fences it out of key management exactly as scoping it does: a
-    // tenant key resolves to a non-empty allowedSessions, so @RequireUnscopedKey 403s every lifecycle
-    // route. Only a NON-EMPTY assignment strips — detaching a tenant (null/'') un-fences, like clearing
-    // a scope. The `trim()` matches the create-stamp and the resolver's truthiness.
-    const assignsTenant = typeof dto.tenantId === 'string' && dto.tenantId.trim().length > 0;
+    // A tenant-admin actor cannot change a key's tenant: it can neither detach a key to global (a
+    // privilege escalation) nor move one into another tenant. Only a global actor's tenantId
+    // assignment is honored (in the patch below); for a tenant actor dto.tenantId is ignored.
+    const mayAssignTenant = !actorTenantId;
+    // Confining a GLOBAL admin to a tenant drops it from the pool of keys that can manage global and
+    // cross-tenant keys — the only keys that can recover the platform (the boot seed fires only on an
+    // EMPTY table) — so a non-empty tenant assignment strips global-admin standing just as a demotion
+    // or a session scope does (both make @RequireUnscopedKey / the usable-admin invariant exclude it).
+    // Detaching a tenant (null/'') restores that standing. Only a global actor can assign a tenant, so
+    // this is a global-actor-only signal. The `trim()` matches the create-stamp and the resolver.
+    const assignsTenant = mayAssignTenant && typeof dto.tenantId === 'string' && dto.tenantId.trim().length > 0;
     // Scoping the last unscoped admin (non-empty allowedSessions), or confining it to a tenant, strips
-    // key-management just as surely as demoting or expiring it: @RequireUnscopedKey would then 403 every
-    // lifecycle route. A role that is null (or empty) is read as no role by the patch below, so it
-    // demotes nothing.
+    // its global key-management standing just as surely as demoting or expiring it. A role that is null
+    // (or empty) is read as no role by the patch below, so it demotes nothing.
     const stripsAdmin =
       (!!dto.role && dto.role !== ApiKeyRole.ADMIN) ||
       (normalizeScopeList(dto.allowedSessions)?.length ?? 0) > 0 ||
@@ -356,7 +379,8 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
     if (dto.allowedChats !== undefined) patch.allowedChats = normalizeChatAllowList(dto.allowedChats);
     if (dto.expiresAt !== undefined) patch.expiresAt = expiry;
     // null/'' detaches the tenant (global again); a string confines the key to it. Undefined leaves it.
-    if (dto.tenantId !== undefined) patch.tenantId = dto.tenantId?.trim() || null;
+    // Honored only for a global actor — a tenant admin never moves a key across the tenant boundary.
+    if (mayAssignTenant && dto.tenantId !== undefined) patch.tenantId = dto.tenantId?.trim() || null;
 
     let saved: ApiKey;
     if (removesOrSchedulesLastAdmin) {
@@ -389,8 +413,8 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
     return saved;
   }
 
-  async delete(id: string): Promise<void> {
-    const apiKey = await this.findOne(id);
+  async delete(id: string, actorTenantId?: string | null): Promise<void> {
+    const apiKey = await this.findOne(id, actorTenantId);
     // Guarded whatever role the pre-read saw, so the statement judges the live row (see update).
     const result = await this.withLastAdminGuard(
       this.apiKeyRepository.createQueryBuilder().delete().from(ApiKey),
@@ -408,8 +432,8 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
     });
   }
 
-  async revoke(id: string): Promise<ApiKey> {
-    const apiKey = await this.findOne(id);
+  async revoke(id: string, actorTenantId?: string | null): Promise<ApiKey> {
+    const apiKey = await this.findOne(id, actorTenantId);
     // Guarded whatever role the pre-read saw, so the statement judges the live row (see update).
     const result = await this.withLastAdminGuard(
       this.apiKeyRepository.createQueryBuilder().update(ApiKey).set({ isActive: false }),
@@ -441,16 +465,18 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
 
   /**
    * "Usable admin" — the SQL-level subject of the last-admin invariant: an active, unexpired ADMIN
-   * key with NO session scope. The key-lifecycle routes are fenced behind @RequireUnscopedKey
-   * (AuthController), so a session-scoped admin can authenticate but can never manage keys —
-   * counting it as a surviving admin would bless the removal of the last key that actually can, a
-   * permanent management lockout with no in-band recovery (the boot seed only fires on an EMPTY
-   * table, not on zero unscoped admins). The simple-array column stores an empty array as '' (rows
-   * updated with allowedSessions: [] hold exactly that), so "no session scope" is NULL or ''.
-   * Dates are stored as UTC "YYYY-MM-DD HH:mm:ss.SSS" strings, so :guardNow is bound in that exact
-   * format (see guardNowParam) and the string comparison is chronological. Parameterized by column
-   * prefix so one definition serves both the row being mutated (bare) and the EXISTS subquery's
-   * `other` row.
+   * key with NO session scope AND NO tenant. This is the GLOBAL-admin pool: the only keys that can
+   * manage global and cross-tenant keys and so recover the platform (the boot seed fires only on an
+   * EMPTY table, never on zero global admins). A session-scoped key is fenced off these routes
+   * outright (@TenantSelfManage refuses it); a tenant-confined admin CAN manage its own tenant's keys
+   * (@TenantSelfManage admits it) but cannot touch a global key or recover the platform — so neither
+   * may count toward this invariant, or removing the last key that truly can recover the platform
+   * would be blessed: a permanent lockout with no in-band recovery. The simple-array column stores an
+   * empty array as '' (rows updated with allowedSessions: [] hold exactly that), so "no session scope"
+   * is NULL or ''; likewise "no tenant" is NULL or ''. Dates are stored as UTC "YYYY-MM-DD HH:mm:ss.SSS"
+   * strings, so :guardNow is bound in that exact format (see guardNowParam) and the string comparison
+   * is chronological. Parameterized by column prefix so one definition serves both the row being
+   * mutated (bare) and the EXISTS subquery's `other` row.
    */
   private static usableAdminCondition(prefix: string): string {
     const col = (name: string) => (prefix ? `"${prefix}"."${name}"` : `"${name}"`);
@@ -459,11 +485,10 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
       `(${col('expiresAt')} IS NULL OR ${col('expiresAt')} > :guardNow) AND ` +
       `(${col('allowedSessions')} = '' OR ${col('allowedSessions')} IS NULL) AND ` +
       `(${col('allowedChats')} = '' OR ${col('allowedChats')} IS NULL) AND ` +
-      // A tenant-confined admin resolves to a non-empty allowedSessions at auth time, so
-      // @RequireUnscopedKey fences it out of every key-lifecycle route: it can authenticate but can
-      // never manage keys, so it must NOT count toward the last-usable-admin invariant (mirrors the
-      // allowedSessions clause above). '' and NULL both mean "no tenant", matching the create/update
-      // stamp and the resolver's truthiness.
+      // A tenant-confined admin manages only its own tenant's keys (@TenantSelfManage admits it, but
+      // it can never touch a global key or recover the platform), so it must NOT count toward the
+      // last-GLOBAL-admin invariant — only an untenanted admin does. '' and NULL both mean "no
+      // tenant", matching the create/update stamp and the resolver's truthiness.
       `(${col('tenantId')} = '' OR ${col('tenantId')} IS NULL)`
     );
   }
@@ -601,6 +626,11 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
    * it; tenantScope is @Optional), which keeps pre-tenancy behavior exactly.
    */
   private async applyTenantScope(apiKey: ApiKey): Promise<void> {
+    // Capture the EXPLICIT session restriction (the stored allowedSessions) before tenant membership
+    // collapses into the effective allowedSessions below, so the guard's @TenantSelfManage fence can
+    // tell a tenant-confined key — admissible to self-management routes — from an explicitly
+    // session-restricted one, which is never admissible however its tenant resolves.
+    apiKey.rawSessionRestricted = (apiKey.allowedSessions?.length ?? 0) > 0;
     if (this.tenantScope) {
       apiKey.allowedSessions = await this.tenantScope.effectiveAllowedSessions(apiKey);
     }

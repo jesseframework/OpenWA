@@ -41,13 +41,16 @@ const ALLOWLIST = new Map<string, string>([
 
 /**
  * Return the names of handlers in `source` that look deployment-global but carry no fence.
- * A handler is considered fenced when it (or its class) has @RequireUnscopedKey or @Public, and
- * session-dimensioned when it declares a `:sessionId` route param or the class is @SessionScoped.
+ * A handler is considered fenced when it (or its class) has @RequireUnscopedKey, @TenantSelfManage
+ * or @Public, and session-dimensioned when it declares a `:sessionId` route param or the class is
+ * @SessionScoped. @TenantSelfManage still refuses a session-restricted key (the threat this spec
+ * guards — a scoped key minting/widening credentials on a global route); it only ADDITIONALLY admits
+ * a tenant-confined key, which the handler then scopes to the caller's own tenant.
  */
 export function handlersMissingGlobalFence(source: string): string[] {
   const beforeClass = source.split('export class')[0] ?? '';
   const classIsSessionScoped = /@SessionScoped\(\)/.test(beforeClass);
-  const classIsFenced = /@RequireUnscopedKey\(\)/.test(beforeClass);
+  const classIsFenced = /@(RequireUnscopedKey|TenantSelfManage)\(\)/.test(beforeClass);
   const classIsPublic = /@Public\(\)/.test(beforeClass);
   // A :sessionId in the class-level @Controller(...) prefix (e.g. @Controller('sessions/:sessionId/messages'))
   // gives EVERY handler on the controller a session dimension the guard scopes against — the per-session
@@ -67,7 +70,7 @@ export function handlersMissingGlobalFence(source: string): string[] {
     // routes too, so a handler using one is still an endpoint the fence decision applies to.
     if (!/@(Get|Post|Put|Patch|Delete|All|Sse|Head)\(/.test(decorators)) continue;
     if (/@Public\(\)/.test(decorators)) continue;
-    if (/@RequireUnscopedKey\(\)/.test(decorators)) continue;
+    if (/@(RequireUnscopedKey|TenantSelfManage)\(\)/.test(decorators)) continue;
     // A :sessionId route param gives the guard something to scope against.
     if (/@(Get|Post|Put|Patch|Delete|All|Sse|Head)\([^)]*:sessionId/.test(decorators)) continue;
     // On a @SessionScoped controller the bare `:id` param is a session id, so it is scoped too.

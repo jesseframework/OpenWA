@@ -141,4 +141,46 @@ describe('AuthService tenant confinement (validateApiKey)', () => {
       allowedSessions: ['s-own-1'],
     });
   });
+
+  // applyTenantScope stamps `rawSessionRestricted` from the scope the KEY itself carried, captured
+  // BEFORE tenant membership is collapsed into the effective allowedSessions. The guard's
+  // @TenantSelfManage fence reads this flag to admit a tenant-confined key (self-management is fine)
+  // while still refusing a key the caller explicitly pinned to sessions. These assertions pin the
+  // raw-vs-effective distinction to the production resolution path.
+  describe('rawSessionRestricted reflects the raw scope, not the tenant-effective one', () => {
+    it('is false for a tenant key with no own scope, though its effective allowedSessions is non-empty', async () => {
+      apiKeys = [mkKey('tenant-a-key', { tenantId: 'tenant-A' })];
+      sessions = [{ id: 's-own', tenantId: 'tenant-A' }];
+
+      const result = await service.validateApiKey('tenant-a-key', '1.1.1.1', 's-own');
+      expect(result.allowedSessions).toEqual(['s-own']); // effective scope was filled in…
+      expect(result.rawSessionRestricted).toBe(false); // …but the key named no sessions itself
+    });
+
+    it('is false for a global key with no scope', async () => {
+      apiKeys = [mkKey('global-key', { tenantId: null })];
+      sessions = [{ id: 's-x', tenantId: 'tenant-A' }];
+
+      const result = await service.validateApiKey('global-key', '1.1.1.1', 's-x');
+      expect(result.allowedSessions).toBeNull();
+      expect(result.rawSessionRestricted).toBe(false);
+    });
+
+    it('is true for a tenant key that named its own sessions', async () => {
+      apiKeys = [mkKey('scoped-tenant-key', { tenantId: 'tenant-A', allowedSessions: ['s-own-1'] })];
+      sessions = [{ id: 's-own-1', tenantId: 'tenant-A' }];
+
+      const result = await service.validateApiKey('scoped-tenant-key', '1.1.1.1', 's-own-1');
+      expect(result.rawSessionRestricted).toBe(true);
+    });
+
+    it('is true for a pre-tenancy session-restricted global key', async () => {
+      apiKeys = [mkKey('scoped-global-key', { tenantId: null, allowedSessions: ['s-x'] })];
+      sessions = [{ id: 's-x', tenantId: 'tenant-A' }];
+
+      const result = await service.validateApiKey('scoped-global-key', '1.1.1.1', 's-x');
+      expect(result.allowedSessions).toEqual(['s-x']);
+      expect(result.rawSessionRestricted).toBe(true);
+    });
+  });
 });

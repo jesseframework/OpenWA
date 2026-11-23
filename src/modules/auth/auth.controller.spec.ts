@@ -1,18 +1,21 @@
 import 'reflect-metadata';
 import type { Request } from 'express';
 import { AuthController } from './auth.controller';
-import { UNSCOPED_KEY } from './decorators/auth.decorators';
+import { UNSCOPED_KEY, TENANT_SELF_MANAGE_KEY } from './decorators/auth.decorators';
 import { AuditAction } from '../audit/entities/audit-log.entity';
 import type { ApiKey } from './entities/api-key.entity';
 import type { AuthService } from './auth.service';
 import type { AuditService } from '../audit/audit.service';
 
 // Key-lifecycle routes carry no session dimension, so the guard's allowedSessions fence can never
-// bite on them — the class-level @RequireUnscopedKey marker is what keeps a session-scoped ADMIN
-// key from minting or widening credentials here. Lock that the marker stays on the controller.
+// bite on them — the class-level @TenantSelfManage marker is what keeps a SESSION-restricted ADMIN
+// key from minting or widening credentials here, while admitting a tenant-confined admin (the service
+// then confines it to its own tenant). Lock that the marker stays, and that the stricter
+// @RequireUnscopedKey (which would wrongly reject a tenant admin) is gone.
 describe('AuthController — scoped-key confinement marker', () => {
-  it('requires unscoped keys at the class level', () => {
-    expect(Reflect.getMetadata(UNSCOPED_KEY, AuthController)).toBe(true);
+  it('fences the class with @TenantSelfManage, not @RequireUnscopedKey', () => {
+    expect(Reflect.getMetadata(TENANT_SELF_MANAGE_KEY, AuthController)).toBe(true);
+    expect(Reflect.getMetadata(UNSCOPED_KEY, AuthController)).toBeUndefined();
   });
 });
 
@@ -154,7 +157,8 @@ describe('AuthController — API-key lifecycle audit logging', () => {
 
   it('logs API_KEY_DELETED on delete', async () => {
     await controller.delete('k1', makeReq(), actor);
-    expect(authService.delete).toHaveBeenCalledWith('k1');
+    // A global actor (no tenantId) threads null confinement into the service.
+    expect(authService.delete).toHaveBeenCalledWith('k1', null);
     expect(lastContextFor(AuditAction.API_KEY_DELETED)?.metadata?.targetKeyId).toBe('k1');
   });
 

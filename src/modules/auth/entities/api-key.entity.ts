@@ -55,6 +55,16 @@ export class ApiKey {
   @Column({ type: 'varchar', length: 36, nullable: true })
   tenantId?: string | null;
 
+  /**
+   * NOT a column — a transient per-request flag the auth layer stamps during tenant resolution
+   * (applyTenantScope), capturing whether this key had an EXPLICIT `allowedSessions` restriction
+   * BEFORE tenant membership was collapsed into the effective `allowedSessions`. The guard's
+   * @TenantSelfManage fence reads it to tell a tenant-confined key (admissible to self-management
+   * routes) from an explicitly session-restricted one (never admissible). Undefined outside a
+   * validated request.
+   */
+  rawSessionRestricted?: boolean;
+
   @Column({ type: 'boolean', default: true })
   isActive!: boolean;
 
