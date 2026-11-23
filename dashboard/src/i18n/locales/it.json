@@ -397,7 +397,9 @@
     "help": "Serve aiuto?",
     "viewDocs": "Visualizza la documentazione",
     "footer": "Fatto con il ❤️ da Yudhi Armyndharis e dalla Community di OpenWA",
-    "version": "v{{version}} · {{date}}"
+    "version": "v{{version}} · {{date}}",
+    "workhubButton": "Accedi con WorkHub",
+    "workhubError": "L'accesso con WorkHub non è stato completato. Riprova o usa una chiave API qui sotto."
   },
   "dashboard": {
     "title": "Dashboard",

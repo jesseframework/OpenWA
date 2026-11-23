@@ -142,3 +142,31 @@ test('the language picker is named for what it sets and for the language it show
   rtl.render(createElement(Login, { onLogin: () => undefined }));
   assert.ok(rtl.screen.getByRole('button', { name: 'Language, English' }));
 });
+
+// "Sign in with WorkHub" shows only when the backend reports the feature is configured; the button is
+// a full-page navigation to /connect/start, so we assert its presence, not jsdom navigation.
+test('offers the WorkHub button when the backend reports the feature on', async () => {
+  reply = () => new Response(JSON.stringify({ enabled: true }), { headers: { 'Content-Type': 'application/json' } });
+  rtl.render(createElement(Login, { onLogin: () => undefined }));
+  await rtl.waitFor(() => assert.ok(rtl.screen.getByRole('button', { name: 'Sign in with WorkHub' })));
+});
+
+test('hides the WorkHub button when the backend reports the feature off', async () => {
+  reply = () => new Response(JSON.stringify({ enabled: false }), { headers: { 'Content-Type': 'application/json' } });
+  rtl.render(createElement(Login, { onLogin: () => undefined }));
+  // Give the config effect a tick to resolve, then confirm the button never appears.
+  await new Promise(resolve => setTimeout(resolve, 20));
+  assert.equal(rtl.screen.queryByRole('button', { name: 'Sign in with WorkHub' }), null);
+});
+
+// When the WorkHub callback could not finish it returns the browser to /?workhub_error=…; the login
+// page reads that once and shows a notice above the form.
+test('shows a notice when WorkHub sign-in returned an error', () => {
+  window.history.replaceState(null, '', '/?workhub_error=failed');
+  try {
+    rtl.render(createElement(Login, { onLogin: () => undefined }));
+    assert.match(rtl.screen.getByRole('alert').textContent ?? '', /WorkHub sign-in didn't finish/);
+  } finally {
+    window.history.replaceState(null, '', '/');
+  }
+});

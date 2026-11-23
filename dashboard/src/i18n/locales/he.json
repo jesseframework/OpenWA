@@ -403,7 +403,9 @@
     "help": "צריך עזרה?",
     "viewDocs": "לצפייה בתיעוד",
     "footer": "נבנה באהבה על ידי Yudhi Armyndharis וקהילת OpenWA",
-    "version": "v{{version}} · {{date}}"
+    "version": "v{{version}} · {{date}}",
+    "workhubButton": "התחברות באמצעות WorkHub",
+    "workhubError": "ההתחברות באמצעות WorkHub לא הושלמה. נסו שוב או השתמשו במפתח API למטה."
   },
   "dashboard": {
     "title": "דאשבורד",

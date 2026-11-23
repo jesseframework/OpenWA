@@ -392,7 +392,9 @@
     "help": "Yardıma mı ihtiyacınız var?",
     "viewDocs": "Dokümantasyonu Görüntüle",
     "footer": "Yudhi Armyndharis ve OpenWA Topluluğu tarafından ❤️ ile yapılmıştır",
-    "version": "v{{version}} · {{date}}"
+    "version": "v{{version}} · {{date}}",
+    "workhubButton": "WorkHub ile oturum aç",
+    "workhubError": "WorkHub ile oturum açma tamamlanmadı. Tekrar deneyin veya aşağıdan bir API anahtarı kullanın."
   },
   "dashboard": {
     "title": "Kontrol Paneli",

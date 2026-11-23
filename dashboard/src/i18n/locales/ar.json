@@ -413,7 +413,9 @@
     "help": "هل تحتاج مساعدة؟",
     "viewDocs": "عرض التوثيق",
     "footer": "صُنع بـ ❤️ بواسطة Yudhi Armyndharis ومجتمع OpenWA",
-    "version": "v{{version}} · {{date}}"
+    "version": "v{{version}} · {{date}}",
+    "workhubButton": "تسجيل الدخول باستخدام WorkHub",
+    "workhubError": "لم يكتمل تسجيل الدخول باستخدام WorkHub. حاول مرة أخرى أو استخدم مفتاح API أدناه."
   },
   "dashboard": {
     "title": "لوحة التحكم",

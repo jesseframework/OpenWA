@@ -392,7 +392,9 @@
     "help": "Butuh bantuan?",
     "viewDocs": "Lihat Dokumentasi",
     "footer": "Dibuat dengan ❤️ oleh Yudhi Armyndharis dan Komunitas OpenWA",
-    "version": "v{{version}} · {{date}}"
+    "version": "v{{version}} · {{date}}",
+    "workhubButton": "Masuk dengan WorkHub",
+    "workhubError": "Masuk dengan WorkHub tidak selesai. Coba lagi, atau gunakan kunci API di bawah."
   },
   "dashboard": {
     "title": "Dasbor",
