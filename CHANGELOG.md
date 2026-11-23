@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.33.0] - 2026-11-23
+
+### Added
+
+- Dashboard: a Tenants section (admin, unscoped keys only) to create, edit and delete tenants, with the server's fail-safe surfaced — a delete is refused while any key or session still references the tenant. The API Keys page gains a tenant selector in the create form and a `Tenant: <name>` badge in the list, so a key can be confined to a single tenant's sessions from the UI. Backend behaviour is unchanged from 0.32.0; this release carries the dashboard surface for it.
+
 ## [0.32.0] - 2026-11-22
 
 ### Added
