@@ -3,7 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { AuthService } from './auth.service';
 import { CreateApiKeyDto, UpdateApiKeyDto, ApiKeyResponseDto, ApiKeyCreatedResponseDto } from './dto';
-import { RequireRole, CurrentApiKey, RequireUnscopedKey } from './decorators/auth.decorators';
+import { RequireRole, CurrentApiKey, TenantSelfManage } from './decorators/auth.decorators';
 import { type ApiKey, ApiKeyRole } from './entities/api-key.entity';
 import { AuditService } from '../audit/audit.service';
 import { AuditAction } from './../audit/entities/audit-log.entity';
@@ -17,9 +17,13 @@ function readableExpiry(expiresAt: Date | null): Date | null {
 
 @ApiTags('auth')
 @Controller('auth/api-keys')
-// Key lifecycle routes have no session dimension, so a session-scoped ADMIN key could otherwise
-// escape its confinement here (mint an unrestricted key, or clear another key's allowedSessions).
-@RequireUnscopedKey()
+// Key-lifecycle routes have no session dimension, so a SESSION-restricted ADMIN key could otherwise
+// escape its confinement here (mint an unrestricted key, or clear another key's allowedSessions):
+// @TenantSelfManage refuses such keys. It DOES admit a tenant-confined admin, which the service then
+// confines to its OWN tenant's keys — createApiKey forces the new key's tenant to the actor's, and
+// findAll/findOne/update/delete/revoke 404 on a cross-tenant target (see the actorTenantId threaded
+// into each call below). A global (untenanted) admin manages every key, exactly as before.
+@TenantSelfManage()
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
@@ -83,7 +87,7 @@ export class AuthController {
     @Req() req: Request,
     @CurrentApiKey() actor?: ApiKey,
   ): Promise<ApiKeyCreatedResponseDto> {
-    const { apiKey, rawKey } = await this.authService.createApiKey(dto);
+    const { apiKey, rawKey } = await this.authService.createApiKey(dto, actor?.tenantId ?? null);
     await this.auditService.logInfo(AuditAction.API_KEY_CREATED, {
       ...this.auditContext(req, actor),
       metadata: {
@@ -104,8 +108,8 @@ export class AuthController {
     description: 'All API keys (the plaintext key is never returned; only the keyPrefix).',
     type: [ApiKeyResponseDto],
   })
-  async findAll(): Promise<ApiKeyResponseDto[]> {
-    const keys = await this.authService.findAll();
+  async findAll(@CurrentApiKey() actor?: ApiKey): Promise<ApiKeyResponseDto[]> {
+    const keys = await this.authService.findAll(actor?.tenantId ?? null);
     return keys.map(k => this.toResponse(k));
   }
 
@@ -118,8 +122,8 @@ export class AuthController {
     type: ApiKeyResponseDto,
   })
   @ApiResponse({ status: 404, description: 'No API key with this id.' })
-  async findOne(@Param('id') id: string): Promise<ApiKeyResponseDto> {
-    const k = await this.authService.findOne(id);
+  async findOne(@Param('id') id: string, @CurrentApiKey() actor?: ApiKey): Promise<ApiKeyResponseDto> {
+    const k = await this.authService.findOne(id, actor?.tenantId ?? null);
     return this.toResponse(k);
   }
 
@@ -139,8 +143,8 @@ export class AuthController {
     @Req() req: Request,
     @CurrentApiKey() actor?: ApiKey,
   ): Promise<ApiKeyResponseDto> {
-    const before = await this.authService.findOne(id);
-    const k = await this.authService.update(id, dto);
+    const before = await this.authService.findOne(id, actor?.tenantId ?? null);
+    const k = await this.authService.update(id, dto, actor?.tenantId ?? null);
     await this.auditService.logInfo(AuditAction.API_KEY_UPDATED, {
       ...this.auditContext(req, actor),
       metadata: {
@@ -164,8 +168,8 @@ export class AuthController {
     description: 'The key is the last usable admin key: no other usable admin key lasts at least as long.',
   })
   async delete(@Param('id') id: string, @Req() req: Request, @CurrentApiKey() actor?: ApiKey): Promise<void> {
-    const target = await this.authService.findOne(id);
-    await this.authService.delete(id);
+    const target = await this.authService.findOne(id, actor?.tenantId ?? null);
+    await this.authService.delete(id, actor?.tenantId ?? null);
     await this.auditService.logInfo(AuditAction.API_KEY_DELETED, {
       ...this.auditContext(req, actor),
       metadata: { targetKeyId: id, targetKeyName: target?.name },
@@ -187,7 +191,7 @@ export class AuthController {
     @Req() req: Request,
     @CurrentApiKey() actor?: ApiKey,
   ): Promise<ApiKeyResponseDto> {
-    const k = await this.authService.revoke(id);
+    const k = await this.authService.revoke(id, actor?.tenantId ?? null);
     await this.auditService.logInfo(AuditAction.API_KEY_REVOKED, {
       ...this.auditContext(req, actor),
       metadata: { targetKeyId: k.id, targetKeyName: k.name },

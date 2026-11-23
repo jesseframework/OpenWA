@@ -333,6 +333,25 @@ describe('AuthService', () => {
       await expect(service.createApiKey({ name: 'tmp', expiresAt })).rejects.toThrow(BadRequestException);
       expect(repository.save).not.toHaveBeenCalled();
     });
+
+    it("forces a tenant-admin actor's new key into the actor's own tenant, overriding the body", async () => {
+      (repository.create as jest.Mock).mockImplementation((dto: Partial<ApiKey>) => ({ ...dto, id: 'uuid-new' }));
+      (repository.save as jest.Mock).mockImplementation((k: ApiKey) => Promise.resolve(k));
+
+      // The actor is confined to tenant-A; the body tries to plant the key in tenant-B.
+      await service.createApiKey({ name: 'k', tenantId: 'tenant-B' }, 'tenant-A');
+
+      expect(repository.create).toHaveBeenCalledWith(expect.objectContaining({ tenantId: 'tenant-A' }));
+    });
+
+    it('lets a global actor set the new key tenant from the body', async () => {
+      (repository.create as jest.Mock).mockImplementation((dto: Partial<ApiKey>) => ({ ...dto, id: 'uuid-new' }));
+      (repository.save as jest.Mock).mockImplementation((k: ApiKey) => Promise.resolve(k));
+
+      await service.createApiKey({ name: 'k', tenantId: 'tenant-B' }, null);
+
+      expect(repository.create).toHaveBeenCalledWith(expect.objectContaining({ tenantId: 'tenant-B' }));
+    });
   });
 
   // ── findAll / findOne ─────────────────────────────────────────────
@@ -345,7 +364,16 @@ describe('AuthService', () => {
       const result = await service.findAll();
 
       expect(result).toHaveLength(2);
-      expect(repository.find).toHaveBeenCalledWith({ order: { createdAt: 'DESC' } });
+      // A global actor (no tenant) passes an empty where — all keys, DESC by createdAt.
+      expect(repository.find).toHaveBeenCalledWith({ where: {}, order: { createdAt: 'DESC' } });
+    });
+
+    it('confines a tenant-admin actor to its own tenant', async () => {
+      (repository.find as jest.Mock).mockResolvedValue([]);
+
+      await service.findAll('tenant-A');
+
+      expect(repository.find).toHaveBeenCalledWith({ where: { tenantId: 'tenant-A' }, order: { createdAt: 'DESC' } });
     });
   });
 
@@ -362,6 +390,67 @@ describe('AuthService', () => {
       (repository.findOne as jest.Mock).mockResolvedValue(null);
 
       await expect(service.findOne('nonexistent')).rejects.toThrow(NotFoundException);
+    });
+
+    it('returns an own-tenant key to a tenant-admin actor', async () => {
+      const key = createMockApiKey({ tenantId: 'tenant-A' });
+      (repository.findOne as jest.Mock).mockResolvedValue(key);
+
+      await expect(service.findOne('uuid-1', 'tenant-A')).resolves.toBe(key);
+    });
+
+    it('hides a cross-tenant key from a tenant-admin actor as NotFound (never 403)', async () => {
+      const key = createMockApiKey({ tenantId: 'tenant-B' });
+      (repository.findOne as jest.Mock).mockResolvedValue(key);
+
+      // 404, not 403 — a tenant cannot even confirm another tenant's key exists.
+      await expect(service.findOne('uuid-1', 'tenant-A')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ── tenant-admin key-management confinement (@TenantSelfManage surface) ──
+  // A tenant-admin actor manages ONLY its own tenant's keys: a cross-tenant target is reported as
+  // NotFound BEFORE any write, and a tenant actor can never move a key across the tenant boundary.
+  describe('tenant-admin confinement on update/delete/revoke', () => {
+    it('refuses to update a cross-tenant target (NotFound, no write lands)', async () => {
+      setupKeys([createMockApiKey({ id: 'k-b', tenantId: 'tenant-B', role: ApiKeyRole.OPERATOR })]);
+
+      await expect(service.update('k-b', { name: 'x' }, 'tenant-A')).rejects.toThrow(NotFoundException);
+      expect(committedWrites).toHaveLength(0);
+    });
+
+    it('refuses to delete a cross-tenant target (NotFound, no write lands)', async () => {
+      setupKeys([createMockApiKey({ id: 'k-b', tenantId: 'tenant-B', role: ApiKeyRole.OPERATOR })]);
+
+      await expect(service.delete('k-b', 'tenant-A')).rejects.toThrow(NotFoundException);
+      expect(committedWrites).toHaveLength(0);
+    });
+
+    it('refuses to revoke a cross-tenant target (NotFound, no write lands)', async () => {
+      setupKeys([createMockApiKey({ id: 'k-b', tenantId: 'tenant-B', role: ApiKeyRole.OPERATOR })]);
+
+      await expect(service.revoke('k-b', 'tenant-A')).rejects.toThrow(NotFoundException);
+      expect(committedWrites).toHaveLength(0);
+    });
+
+    it('updates an own-tenant key, but ignores a tenantId change from a tenant actor', async () => {
+      setupKeys([createMockApiKey({ id: 'k-a', tenantId: 'tenant-A', role: ApiKeyRole.OPERATOR })]);
+
+      // The actor tries to detach its own key to global (tenantId: '') while renaming it.
+      await service.update('k-a', { name: 'renamed', tenantId: '' }, 'tenant-A');
+
+      const row = keys.get('k-a')!;
+      expect(row.name).toBe('renamed'); // the allowed field changed…
+      expect(row.tenantId).toBe('tenant-A'); // …but the tenant boundary held
+      // tenantId was never offered to the write — a tenant actor cannot move a key across tenants.
+      expect(committedWrites.at(-1)?.patch).not.toHaveProperty('tenantId');
+    });
+
+    it('deletes an own-tenant key', async () => {
+      setupKeys([createMockApiKey({ id: 'k-a', tenantId: 'tenant-A', role: ApiKeyRole.OPERATOR })]);
+
+      await service.delete('k-a', 'tenant-A');
+      expect(keys.has('k-a')).toBe(false);
     });
   });
 

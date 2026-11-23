@@ -55,6 +55,7 @@ import {
   RequireRole,
   RequireUnscopedKey,
   SessionScoped,
+  TenantSelfManage,
 } from '../auth/decorators/auth.decorators';
 import { ChatScopeService } from '../auth/chat-scope.service';
 import { ApiKey, ApiKeyRole } from '../auth/entities/api-key.entity';
@@ -89,10 +90,12 @@ export class SessionController {
 
   @Post()
   @RequireRole(ApiKeyRole.OPERATOR)
-  // Creating a session has no existing session id for the class-level @SessionScoped fence to check,
-  // and the new session is outside the caller's allowlist by construction — so a key restricted to
-  // specific sessions cannot create one. Different metadata key from @SessionScoped; they coexist.
-  @RequireUnscopedKey()
+  // Creating a session has no existing session id for the class-level @SessionScoped fence to check.
+  // @TenantSelfManage refuses a key with an EXPLICIT allowedSessions restriction (the new session is
+  // outside its allowlist by construction), but admits a tenant-confined key: the new session is
+  // stamped with apiKey.tenantId below, so a tenant creates sessions inside its OWN tenant. A global
+  // key creates unassigned ones. Different metadata key from @SessionScoped; they coexist.
+  @TenantSelfManage()
   @ApiOperation({ summary: 'Create a new WhatsApp session' })
   @ApiResponse({
     status: 201,

@@ -7,6 +7,7 @@ export const REQUIRED_ROLE_KEY = 'requiredRole';
 export const PUBLIC_KEY = 'isPublic';
 export const SESSION_SCOPED_KEY = 'sessionScoped';
 export const UNSCOPED_KEY = 'requireUnscopedKey';
+export const TENANT_SELF_MANAGE_KEY = 'tenantSelfManage';
 export const CHAT_SCOPED_KEY = 'chatScoped';
 export const CHAT_QUOTED_ALLOWED_KEY = 'chatQuotedAllowed';
 
@@ -39,6 +40,19 @@ export const Public = () => SetMetadata(PUBLIC_KEY, true);
  * @example @RequireUnscopedKey() @Controller('auth/api-keys')
  */
 export const RequireUnscopedKey = () => SetMetadata(UNSCOPED_KEY, true);
+
+/**
+ * Mark a route a TENANT key may self-manage, in addition to a global key. Unlike
+ * {@link RequireUnscopedKey} — which refuses a tenant key outright, keeping global surfaces (infra,
+ * plugins, settings, tenant CRUD) global-only — this refuses only a key with an EXPLICIT
+ * `allowedSessions` restriction (`apiKey.rawSessionRestricted`), so a tenant-confined key (one with a
+ * `tenantId` but no explicit session list) is admitted. The HANDLER must then confine the action to
+ * the caller's own tenant — a new session is stamped with `apiKey.tenantId`, and key-management
+ * reads/writes are filtered to it — so a tenant admin self-manages WITHIN its tenant and can never
+ * reach another tenant's or a global resource. Use for: session creation, a tenant's own API keys.
+ * @example @TenantSelfManage() @Post() // create a session in the caller's tenant
+ */
+export const TenantSelfManage = () => SetMetadata(TENANT_SELF_MANAGE_KEY, true);
 
 /** How a handler is safe for a chat-restricted key. See {@link ChatScoped}. */
 export type ChatScopeKind = 'fenced' | 'filtered' | 'agnostic';

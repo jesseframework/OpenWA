@@ -8,7 +8,15 @@ import { ChatScopeService } from '../chat-scope.service';
 import { ApiKey, ApiKeyRole } from '../entities/api-key.entity';
 import { AuditService } from '../../audit/audit.service';
 import { AuditAction } from '../../audit/entities/audit-log.entity';
-import { CHAT_QUOTED_ALLOWED_KEY, CHAT_SCOPED_KEY, REQUIRED_ROLE_KEY } from '../decorators/auth.decorators';
+import {
+  CHAT_QUOTED_ALLOWED_KEY,
+  CHAT_SCOPED_KEY,
+  REQUIRED_ROLE_KEY,
+  PUBLIC_KEY,
+  SESSION_SCOPED_KEY,
+  UNSCOPED_KEY,
+  TENANT_SELF_MANAGE_KEY,
+} from '../decorators/auth.decorators';
 
 function createMockApiKey(overrides: Partial<ApiKey> = {}): ApiKey {
   return {
@@ -316,6 +324,61 @@ describe('ApiKeyGuard', () => {
       AuditAction.API_KEY_AUTH_FAILED,
       expect.objectContaining({ ipAddress: '203.0.113.44' }),
     );
+  });
+
+  // A @TenantSelfManage route (session self-creation, and soon a tenant admin managing its own
+  // keys) is reachable by a tenant-confined key but NOT by an explicitly session-restricted one.
+  // The distinction is the RAW scope the caller sent, which auth.service captures on the key as
+  // `rawSessionRestricted` BEFORE collapsing tenant membership into the effective allowedSessions —
+  // so a tenant key (whose effective allowedSessions is non-empty, but whose raw scope was empty)
+  // passes, while a key that itself named sessions is refused.
+  describe('@TenantSelfManage admits tenant-confined keys, refuses session-restricted keys', () => {
+    beforeEach(() => {
+      // Route shape: global (no :sessionId, not @SessionScoped), not public, no role gate,
+      // NOT @RequireUnscopedKey (that fence would wrongly reject a tenant key's effective
+      // allowedSessions) — fenced by @TenantSelfManage instead.
+      metadata[PUBLIC_KEY] = false;
+      metadata[REQUIRED_ROLE_KEY] = undefined;
+      metadata[SESSION_SCOPED_KEY] = undefined;
+      metadata[UNSCOPED_KEY] = false;
+      metadata[TENANT_SELF_MANAGE_KEY] = true;
+    });
+
+    it('admits a tenant-confined key (effective allowedSessions set, raw scope empty)', async () => {
+      const apiKey = createMockApiKey({
+        tenantId: 'tenant-A',
+        allowedSessions: ['sess-tenant-A-1', 'sess-tenant-A-2'], // effective = the tenant's sessions
+        rawSessionRestricted: false, // the key itself named no sessions
+      });
+      (authService.validateApiKey as jest.Mock).mockResolvedValue(apiKey);
+
+      await expect(guard.canActivate(createMockContext({ 'x-api-key': 'tenant-key' }))).resolves.toBe(true);
+    });
+
+    it('admits a global key (no tenant, no scope)', async () => {
+      const apiKey = createMockApiKey({ tenantId: null, allowedSessions: null, rawSessionRestricted: false });
+      (authService.validateApiKey as jest.Mock).mockResolvedValue(apiKey);
+
+      await expect(guard.canActivate(createMockContext({ 'x-api-key': 'global-key' }))).resolves.toBe(true);
+    });
+
+    it('refuses a key that itself named sessions (rawSessionRestricted)', async () => {
+      const apiKey = createMockApiKey({
+        tenantId: 'tenant-A',
+        allowedSessions: ['sess-tenant-A-1'], // narrowed by the caller to one session
+        rawSessionRestricted: true, // the key carried an explicit allowedSessions restriction
+      });
+      (authService.validateApiKey as jest.Mock).mockResolvedValue(apiKey);
+
+      await expect(
+        guard.canActivate(createMockContext({ 'x-api-key': 'scoped-key' }, {}, '203.0.113.44')),
+      ).rejects.toThrow('Session-scoped API keys are not permitted on this route');
+      await new Promise(resolve => setImmediate(resolve)); // let the fire-and-forget audit write settle
+      expect(auditService.logWarn).toHaveBeenCalledWith(
+        AuditAction.API_KEY_AUTH_FAILED,
+        expect.objectContaining({ ipAddress: '203.0.113.44' }),
+      );
+    });
   });
 
   // Both post-authentication denials threw BEFORE the actor was stamped, so every 403 the guard

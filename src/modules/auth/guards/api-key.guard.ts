@@ -19,6 +19,7 @@ import {
   PUBLIC_KEY,
   SESSION_SCOPED_KEY,
   UNSCOPED_KEY,
+  TENANT_SELF_MANAGE_KEY,
   CHAT_SCOPED_KEY,
   CHAT_QUOTED_ALLOWED_KEY,
   ChatScopeKind,
@@ -143,6 +144,19 @@ export class ApiKeyGuard implements CanActivate {
       context.getClass(),
     ]);
     if (requireUnscoped && (apiKey.allowedSessions?.length ?? 0) > 0) {
+      throw new ForbiddenException('Session-scoped API keys are not permitted on this route');
+    }
+
+    // Routes marked @TenantSelfManage admit a tenant-confined key (and a global key) but still refuse
+    // a key with an EXPLICIT allowedSessions restriction — reading the RAW scope captured before
+    // tenant resolution, not the effective one (which @RequireUnscopedKey above uses to keep tenant
+    // keys off global surfaces). The handler confines the action to apiKey.tenantId, so a tenant admin
+    // self-manages within its own tenant only.
+    const tenantSelfManage = this.reflector.getAllAndOverride<boolean>(TENANT_SELF_MANAGE_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (tenantSelfManage && apiKey.rawSessionRestricted) {
       throw new ForbiddenException('Session-scoped API keys are not permitted on this route');
     }
 
