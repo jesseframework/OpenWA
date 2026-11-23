@@ -392,7 +392,9 @@
     "help": "需要協助？",
     "viewDocs": "查看文件",
     "footer": "由 Yudhi Armyndharis 及 OpenWA 社群用 ❤️ 打造",
-    "version": "v{{version}} · {{date}}"
+    "version": "v{{version}} · {{date}}",
+    "workhubButton": "使用 WorkHub 登入",
+    "workhubError": "WorkHub 登入未完成。請重試，或在下方使用 API 金鑰。"
   },
   "dashboard": {
     "title": "控制面板",

@@ -136,4 +136,38 @@ describe('TenantService', () => {
       expect(apiKeyRepo.count).not.toHaveBeenCalled();
     });
   });
+
+  describe('findOrCreateByExternalId', () => {
+    it('returns the existing tenant when the external id already maps to one (no create)', async () => {
+      const existing = { id: 't-existing', externalId: 'wh-co-1', name: 'Acme' } as Tenant;
+      tenantRepo.findOne.mockResolvedValueOnce(existing);
+      await expect(service.findOrCreateByExternalId('wh-co-1', 'Acme Renamed')).resolves.toBe(existing);
+      expect(tenantRepo.create).not.toHaveBeenCalled(); // existing tenant: never renamed on sign-in
+    });
+
+    it('creates an active tenant on first sight, keyed on the external id', async () => {
+      tenantRepo.findOne.mockResolvedValueOnce(null);
+      await service.findOrCreateByExternalId('wh-co-2', '  Globex  ');
+      expect(tenantRepo.create).toHaveBeenCalledWith({ name: 'Globex', externalId: 'wh-co-2', isActive: true });
+    });
+
+    it('falls back to the external id as the name when none is given', async () => {
+      tenantRepo.findOne.mockResolvedValueOnce(null);
+      await service.findOrCreateByExternalId('wh-co-3', '   ');
+      expect(tenantRepo.create).toHaveBeenCalledWith({ name: 'wh-co-3', externalId: 'wh-co-3', isActive: true });
+    });
+
+    it('resolves the first-login race to the winner: a unique violation re-reads and returns it', async () => {
+      const winner = { id: 't-winner', externalId: 'wh-co-4', name: 'Race' } as Tenant;
+      tenantRepo.findOne
+        .mockResolvedValueOnce(null) // first look: not there yet
+        .mockResolvedValueOnce(winner); // re-read after the losing insert
+      tenantRepo.save.mockRejectedValueOnce(uniqueViolation());
+      await expect(service.findOrCreateByExternalId('wh-co-4', 'Race')).resolves.toBe(winner);
+    });
+
+    it('refuses a blank external id', async () => {
+      await expect(service.findOrCreateByExternalId('   ', 'x')).rejects.toBeInstanceOf(ConflictException);
+    });
+  });
 });

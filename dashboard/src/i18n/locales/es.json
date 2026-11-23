@@ -397,7 +397,9 @@
     "help": "¿Necesitas ayuda?",
     "viewDocs": "Ver documentación",
     "footer": "Hecho con ❤️ por Yudhi Armyndharis y la comunidad OpenWA",
-    "version": "v{{version}} · {{date}}"
+    "version": "v{{version}} · {{date}}",
+    "workhubButton": "Iniciar sesión con WorkHub",
+    "workhubError": "El inicio de sesión con WorkHub no se completó. Inténtalo de nuevo o usa una clave API abajo."
   },
   "dashboard": {
     "title": "Panel",

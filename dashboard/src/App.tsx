@@ -37,6 +37,22 @@ const queryClient = new QueryClient({
   },
 });
 
+/**
+ * Remove the one-time "Sign in with WorkHub" return params from the address bar so a refresh or Back
+ * never replays a spent handoff or re-shows a stale error. Keeps the path and hash intact.
+ */
+function stripWorkhubParams(): void {
+  try {
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has('workhub') && !url.searchParams.has('workhub_error')) return;
+    url.searchParams.delete('workhub');
+    url.searchParams.delete('workhub_error');
+    window.history.replaceState(null, '', url.pathname + url.search + url.hash);
+  } catch {
+    /* ignore — the address bar is cosmetic here */
+  }
+}
+
 function AppContent() {
   // Capture the key ONCE at mount. Read live per render, the null→key transition when
   // handleLogin stores a fresh key would re-fire the startup re-validation effect below and
@@ -45,6 +61,15 @@ function AppContent() {
   const [savedKey] = useState(() => sessionStorage.getItem('openwa_api_key'));
   const [isAuthenticated, setIsAuthenticated] = useState(!!savedKey);
   const [, setApiKey] = useState(savedKey || '');
+  // True while we redeem a "Sign in with WorkHub" handoff (?workhub=…), so the login page does not
+  // flash before the key lands. Starts true only when the callback actually returned a handoff.
+  const [claiming, setClaiming] = useState(() => {
+    try {
+      return new URLSearchParams(window.location.search).has('workhub');
+    } catch {
+      return false;
+    }
+  });
   const { setRole, role, setEngineType, setScoped, scoped } = useRole();
 
   const handleLogin = (key: string, validatedRole?: string, engineType?: string, scoped = false) => {
@@ -102,11 +127,67 @@ function AppContent() {
       });
   }, [savedKey, setRole, setEngineType, setScoped, handleLogout]);
 
+  // Redeem a "Sign in with WorkHub" handoff: the callback redirected the browser back to the SPA with
+  // ?workhub=<one-time id>. POST it to /connect/claim for the minted key, validate it to learn the
+  // role (exactly as the manual key path does), then sign in. Runs once at mount; the params are
+  // stripped immediately so a refresh never replays a spent handoff.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const handoff = params.get('workhub');
+    if (!handoff) {
+      stripWorkhubParams(); // clears a lone ?workhub_error after the login page has read it
+      return;
+    }
+    stripWorkhubParams();
+    let alive = true;
+    void (async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/connect/claim`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ handoff }),
+        });
+        if (alive && res.ok) {
+          const { apiKey } = (await res.json().catch(() => ({}))) as { apiKey?: string };
+          if (apiKey) {
+            const v = await fetch(`${API_BASE_URL}/auth/validate`, {
+              method: 'POST',
+              headers: { 'X-API-Key': apiKey },
+            });
+            const data: { role?: string; engineType?: unknown; scoped?: unknown } = v.ok
+              ? await v.json().catch(() => ({}))
+              : {};
+            if (!alive) return;
+            handleLogin(
+              apiKey,
+              data.role,
+              typeof data.engineType === 'string' ? data.engineType : undefined,
+              data.scoped === true,
+            );
+            return;
+          }
+        }
+      } catch {
+        /* fall through to the login page */
+      }
+      if (alive) setClaiming(false); // a stale/used handoff: just show the login page
+    })();
+    return () => {
+      alive = false;
+    };
+    // Mount-only: the handoff is read from the URL present at first load.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const loadingFallback = (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
       <Loader2 className="animate-spin" size={32} />
     </div>
   );
+
+  if (claiming) {
+    return loadingFallback;
+  }
 
   if (!isAuthenticated) {
     return (

@@ -392,7 +392,9 @@
     "help": "Need help?",
     "viewDocs": "View Documentation",
     "footer": "Made with ❤️ by Yudhi Armyndharis and the OpenWA Community",
-    "version": "v{{version}} · {{date}}"
+    "version": "v{{version}} · {{date}}",
+    "workhubButton": "Sign in with WorkHub",
+    "workhubError": "WorkHub sign-in didn't finish. Try again, or use an API key below."
   },
   "dashboard": {
     "title": "Dashboard",

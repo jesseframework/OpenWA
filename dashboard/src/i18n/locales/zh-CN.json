@@ -392,7 +392,9 @@
     "help": "需要帮助？",
     "viewDocs": "查看文档",
     "footer": "由 Yudhi Armyndharis 和 OpenWA 社区用 ❤️ 打造",
-    "version": "v{{version}} · {{date}}"
+    "version": "v{{version}} · {{date}}",
+    "workhubButton": "使用 WorkHub 登录",
+    "workhubError": "WorkHub 登录未完成。请重试，或在下方使用 API 密钥。"
   },
   "dashboard": {
     "title": "仪表盘",

@@ -392,7 +392,9 @@
     "help": "मदद चाहिए?",
     "viewDocs": "दस्तावेज़ देखें",
     "footer": "Yudhi Armyndharis और OpenWA समुदाय द्वारा ❤️ से बनाया गया",
-    "version": "v{{version}} · {{date}}"
+    "version": "v{{version}} · {{date}}",
+    "workhubButton": "WorkHub से साइन इन करें",
+    "workhubError": "WorkHub से साइन इन पूरा नहीं हुआ। फिर से कोशिश करें, या नीचे API कुंजी का उपयोग करें।"
   },
   "dashboard": {
     "title": "डैशबोर्ड",

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Eye, EyeOff, Languages } from 'lucide-react';
 import { GithubIcon } from '../components/GithubIcon';
@@ -17,7 +17,34 @@ export function Login({ onLogin }: LoginProps) {
   const [showKey, setShowKey] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  // Whether the backend offers "Sign in with WorkHub" (off unless configured); the button only shows
+  // when it says yes, so a deployment without WorkHub never advertises a dead button.
+  const [workhubEnabled, setWorkhubEnabled] = useState(false);
+  // The WorkHub callback redirects back to the SPA with ?workhub_error=... when a sign-in did not
+  // complete (the person cancelled, a stale state, or an exchange failure). Read once for the banner.
+  const [workhubFailed] = useState(() => {
+    try {
+      return new URLSearchParams(window.location.search).has('workhub_error');
+    } catch {
+      return false;
+    }
+  });
   const currentLang = resolveSupportedLanguage(i18n.resolvedLanguage || i18n.language);
+
+  useEffect(() => {
+    let alive = true;
+    fetch(`${API_BASE_URL}/connect/config`)
+      .then(r => (r.ok ? r.json() : { enabled: false }))
+      .then((d: { enabled?: boolean }) => {
+        if (alive) setWorkhubEnabled(d.enabled === true);
+      })
+      .catch(() => {
+        /* backend unreachable: leave the button hidden */
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const changeLanguage = (language: SupportedLanguage) => {
     void i18n.changeLanguage(language);
@@ -100,6 +127,12 @@ export function Login({ onLogin }: LoginProps) {
           />
         </div>
 
+        {workhubFailed && (
+          <div className="workhub-error" role="alert">
+            {t('login.workhubError')}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="login-form">
           <div className="input-group">
             <label htmlFor="apiKey">{t('login.apiKey')}</label>
@@ -134,6 +167,23 @@ export function Login({ onLogin }: LoginProps) {
             {isLoading ? t('login.connecting') : t('login.connect')}
           </button>
         </form>
+
+        {workhubEnabled && (
+          <>
+            <div className="workhub-divider" aria-hidden="true" />
+            <button
+              type="button"
+              className="workhub-btn"
+              onClick={() => {
+                // A full-page navigation (not fetch): the backend 302s the browser to WorkHub's consent
+                // page, and the round-trip returns to the SPA with a one-time handoff (App redeems it).
+                window.location.href = `${API_BASE_URL}/connect/start`;
+              }}
+            >
+              {t('login.workhubButton')}
+            </button>
+          </>
+        )}
 
         <p className="login-help">
           {t('login.help')}{' '}

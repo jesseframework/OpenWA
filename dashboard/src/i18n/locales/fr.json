@@ -397,7 +397,9 @@
     "help": "Besoin d'aide ?",
     "viewDocs": "Voir la documentation",
     "footer": "Fait avec ❤️ par Yudhi Armyndharis et la communauté OpenWA",
-    "version": "v{{version}} · {{date}}"
+    "version": "v{{version}} · {{date}}",
+    "workhubButton": "Se connecter avec WorkHub",
+    "workhubError": "La connexion avec WorkHub ne s'est pas terminée. Réessaie, ou utilise une clé API ci-dessous."
   },
   "dashboard": {
     "title": "Tableau de bord",
