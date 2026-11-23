@@ -208,8 +208,6 @@ export interface ApiKey {
   allowedSessions?: string[];
   allowedChats?: string[];
   isActive: boolean;
-  /** The tenant this key is confined to, or null for an unscoped/global key. */
-  tenantId?: string | null;
   expiresAt?: string;
   lastUsedAt?: string;
   usageCount: number;

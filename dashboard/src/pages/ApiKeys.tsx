@@ -454,7 +454,7 @@ export function ApiKeys() {
           id: 'restrictions',
           header: () => t('apiKeys.columns.restrictions'),
           cell: info => {
-            const { allowedIps, allowedChats, expiresAt, tenantId } = info.row.original;
+            const { allowedIps, allowedChats, expiresAt } = info.row.original;
             const badges = [];
             if (allowedIps?.length) {
               badges.push(
@@ -477,14 +477,6 @@ export function ApiKeys() {
                   {isExpired(expiresAt)
                     ? t('apiKeys.restrictions.expired', { date })
                     : t('apiKeys.restrictions.expires', { date })}
-                </span>,
-              );
-            }
-            const tenantName = tenantId ? tenants.find(tn => tn.id === tenantId)?.name : undefined;
-            if (tenantName) {
-              badges.push(
-                <span key="tenant" className="restriction-badge" title={tenantName}>
-                  {t('apiKeys.restrictions.tenant', { name: tenantName })}
                 </span>,
               );
             }
@@ -551,7 +543,7 @@ export function ApiKeys() {
           },
         }),
       ]),
-    [t, sessions, tenants],
+    [t, sessions],
   );
 
   const table = useTable({
