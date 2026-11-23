@@ -57,7 +57,15 @@ import './ApiKeys.css';
 
 const roleNames = ['admin', 'operator', 'viewer'] as const;
 
-const emptyKeyForm = { name: '', role: 'operator', allowedSessions: [] as string[], ips: '', chats: '', expires: '', tenantId: '' };
+const emptyKeyForm = {
+  name: '',
+  role: 'operator',
+  allowedSessions: [] as string[],
+  ips: '',
+  chats: '',
+  expires: '',
+  tenantId: '',
+};
 
 // What the gateway lists for the key seeded from API_MASTER_KEY: its first characters are secret, so none is shown.
 const MASTER_KEY_PREFIX = '(master key)';

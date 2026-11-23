@@ -26,7 +26,9 @@ function installFetchStub(): void {
     if (init?.method === 'POST' && path === '/api/tenants') {
       createCalls++;
       createBody = JSON.parse(String(init.body));
-      return Promise.resolve(jsonResponse({ id: 't-new', name: createBody!.name, externalId: null, isActive: true }, 201));
+      return Promise.resolve(
+        jsonResponse({ id: 't-new', name: createBody!.name, externalId: null, isActive: true }, 201),
+      );
     }
     if (init?.method === 'DELETE' && /^\/api\/tenants\/[^/]+$/.test(path)) {
       deleteCalls.push(path);
@@ -35,7 +37,8 @@ function installFetchStub(): void {
         : Promise.resolve(jsonResponse({ message: 'Tenant still has keys or sessions bound to it.' }, deleteStatus));
     }
     if (path === '/api/tenants') {
-      if (tenantsStatus === 403) return Promise.resolve(jsonResponse({ message: 'An unscoped admin key is required.' }, 403));
+      if (tenantsStatus === 403)
+        return Promise.resolve(jsonResponse({ message: 'An unscoped admin key is required.' }, 403));
       if (tenantsStatus !== 200) return Promise.resolve(jsonResponse({ message: 'database offline' }, 500));
       return Promise.resolve(jsonResponse(tenantList));
     }
@@ -121,7 +124,9 @@ test('creating a tenant posts the name', async () => {
 });
 
 test('a delete refused with 409 keeps the row and does not claim the list is empty', async () => {
-  tenantList = [{ id: 't1', name: 'Acme Corp', externalId: null, isActive: true, createdAt: '2026-11-01T00:00:00.000Z' }];
+  tenantList = [
+    { id: 't1', name: 'Acme Corp', externalId: null, isActive: true, createdAt: '2026-11-01T00:00:00.000Z' },
+  ];
   deleteStatus = 409;
   const { screen, fireEvent, waitFor } = rtl;
   renderTenants();

@@ -345,7 +345,10 @@ export function Tenants() {
             <AlertTriangle size={48} className="confirm-warning-icon" />
           </div>
           <p className="confirm-message">
-            <Trans i18nKey="tenants.confirm.deleteMessage" components={{ name: <strong>{confirmDelete.name}</strong> }} />
+            <Trans
+              i18nKey="tenants.confirm.deleteMessage"
+              components={{ name: <strong>{confirmDelete.name}</strong> }}
+            />
           </p>
         </Modal>
       )}
